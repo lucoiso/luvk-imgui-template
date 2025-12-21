@@ -1,6 +1,3 @@
-[submodule "luvk"]
-	path = Source/luvk
-	url = https://github.com/lucoiso/luvk.git
 [submodule "Source/luvk"]
 	path = Source/luvk
 	url = https://github.com/lucoiso/luvk.git
