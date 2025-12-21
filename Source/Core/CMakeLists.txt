@@ -1,0 +1,37 @@
+# Author: Lucas Vilas-Boas
+# Year: 2025
+# Repo: https://github.com/lucoiso/luvk-imgui-template
+
+SET(LIBRARY_NAME Core)
+
+SET(${LIBRARY_NAME}_SOURCE_BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
+SET(${LIBRARY_NAME}_INCLUDE_BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+
+FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${${LIBRARY_NAME}_SOURCE_BASE_DIRECTORY}/*.cpp")
+FILE(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "${${LIBRARY_NAME}_INCLUDE_BASE_DIRECTORY}/${LIBRARY_NAME}/**/*.hpp")
+
+ADD_LIBRARY(${LIBRARY_NAME} STATIC ${SOURCE_FILES})
+SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+
+TARGET_INCLUDE_DIRECTORIES(${LIBRARY_NAME} PRIVATE ${${LIBRARY_NAME}_SOURCE_BASE_DIRECTORY})
+TARGET_INCLUDE_DIRECTORIES(${LIBRARY_NAME} PUBLIC ${${LIBRARY_NAME}_INCLUDE_BASE_DIRECTORY})
+
+TARGET_SOURCES(${LIBRARY_NAME} PRIVATE
+               ${imgui_SOURCE_DIR}/imgui.cpp
+               ${imgui_SOURCE_DIR}/imgui_draw.cpp
+               ${imgui_SOURCE_DIR}/imgui_demo.cpp
+               ${imgui_SOURCE_DIR}/imgui_tables.cpp
+               ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+)
+
+TARGET_INCLUDE_DIRECTORIES(${LIBRARY_NAME} PUBLIC
+                           ${sdl3_SOURCE_DIR}/include
+                           ${glm_SOURCE_DIR}
+                           ${imgui_SOURCE_DIR}
+)
+
+TARGET_LINK_LIBRARIES(${LIBRARY_NAME} PUBLIC
+                      luvk
+                      SDL3::SDL3
+                      glm::glm
+)
