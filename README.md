@@ -5,4 +5,4 @@ Template for projects using luvk and imgui.
 
 Contains a pre-configured and stylized overlay window.
 
-Can check '[Source/Core/src/UserInterface/ImGuiLayer.cpp](https://github.com/lucoiso/luvk-imgui-template/blob/main/Source/Core/src/UserInterface/ImGuiLayer.cpp)' for more info.
+Can check '[UserInterface/src/Layers/Overlay.cpp](https://github.com/lucoiso/luvk-imgui-template/blob/main/Source/UserInterface/src/Layers/Overlay.cpp)' for more info.
