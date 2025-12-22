@@ -1,4 +1,4 @@
-<img width="409" height="277" alt="image" src="https://github.com/user-attachments/assets/a9242df1-5371-455f-ad09-54d4f6cfbbfc" />
+<img width="387" height="189" alt="image" src="https://github.com/user-attachments/assets/e8216f7a-4062-442a-afdf-4703358f6f27" />
 
 ## About
 Template for projects using luvk and imgui.
