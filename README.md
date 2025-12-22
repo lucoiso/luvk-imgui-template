@@ -3,6 +3,4 @@
 ## About
 Template for projects using luvk and imgui.
 
-Contains a pre-configured and stylized overlay window.
-
-Can check '[UserInterface/src/Layers/Overlay.cpp](https://github.com/lucoiso/luvk-imgui-template/blob/main/Source/UserInterface/src/Layers/Overlay.cpp)' for more info.
+Contains a pre-configured and stylized overlay window imitating Cyberpunk2077 inventory tooltip.

@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <exception>
 #include "UserInterface/Application/Application.hpp"
-#include "UserInterface/Layers/Overlay.hpp"
+#include "UserInterface/Layers/ImGuiLayer.hpp"
 
 #ifdef main
 #undef main
@@ -23,7 +23,7 @@ std::int32_t main()
     {
         if (const auto AppInstance = UserInterface::Application::GetInstance())
         {
-            AppInstance->RegisterImGuiLayer<UserInterface::Overlay>();
+            AppInstance->RegisterImGuiLayer<UserInterface::ImGuiLayer>();
 
             do {}
             while (AppInstance->Render());
