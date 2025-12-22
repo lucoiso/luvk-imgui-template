@@ -5,13 +5,14 @@
 #pragma once
 
 #include "Core/UserInterface/ImGuiLayerBase.hpp"
+#include "UserInterface/Module.hpp"
 
-namespace Core
+namespace UserInterface
 {
-    class ImGuiLayer : public ImGuiLayerBase
+    class USERINTERFACEMODULE_API Overlay : public Core::ImGuiLayerBase
     {
     public:
-        using ImGuiLayerBase::ImGuiLayerBase;
+        using Core::ImGuiLayerBase::ImGuiLayerBase;
         void Draw() override;
         void PushStyle() const override;
     };

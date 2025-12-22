@@ -2,33 +2,46 @@
 // Year: 2025
 // Repo: https://github.com/lucoiso/luvk-imgui-template
 
-#include "Core/Application/Application.hpp"
-#include <chrono>
+#include "UserInterface/Application/Application.hpp"
 #include <imgui.h>
 #include <luvk/Modules/Device.hpp>
-#include <luvk/Modules/Renderer.hpp>
 #include <luvk/Modules/Synchronization.hpp>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_vulkan.h>
-#include "Core/UserInterface/ImGuiLayer.hpp"
 
-using namespace Core;
+using namespace UserInterface;
+
+std::shared_ptr<Application> Application::s_Instance = nullptr;
 
 Application::Application(const std::uint32_t Width, const std::uint32_t Height)
-    : ApplicationBase(Width, Height, SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN | SDL_WINDOW_TRANSPARENT | SDL_WINDOW_NOT_FOCUSABLE)
+    : ApplicationBase(Width, Height, SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN | SDL_WINDOW_TRANSPARENT | SDL_WINDOW_NOT_FOCUSABLE) {}
+
+Application::~Application()
 {
-    ApplicationBase::Initialize();
+    m_DeviceModule->WaitIdle();
+    m_ImGuiLayer.reset();
+}
 
-    m_ImGuiLayer = std::make_unique<ImGuiLayer>(m_Window,
-                                                m_Renderer->GetInstance(),
-                                                m_DeviceModule,
-                                                m_DescriptorPoolModule,
-                                                m_SwapChainModule,
-                                                m_MemoryModule);
+std::shared_ptr<Application> Application::GetInstance()
+{
+    if (!s_Instance)
+    {
+        s_Instance = std::shared_ptr<Application>(new Application(4, 4));
+        if (!s_Instance->Initialize())
+        {
+            s_Instance.reset();
+            return nullptr;
+        }
 
+        s_Instance->RegisterInputBindings();
+    }
+
+    return s_Instance;
+}
+
+void Application::PostRegisterImGuiLayer() const
+{
     m_ImGuiLayer->PushStyle();
-
-    RegisterInputBindings();
 
     m_Renderer->SetPreRenderCallback([this]([[maybe_unused]] const VkCommandBuffer& Cmd)
     {
@@ -37,21 +50,8 @@ Application::Application(const std::uint32_t Width, const std::uint32_t Height)
 
     m_Renderer->SetDrawCallback([this](const VkCommandBuffer& Cmd)
     {
-        const auto FrameIndex = static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame());
-        m_ImGuiLayer->Render(Cmd, FrameIndex);
+        m_ImGuiLayer->Render(Cmd, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
     });
-}
-
-Application::~Application()
-{
-    m_DeviceModule->WaitIdle();
-    m_ImGuiLayer.reset();
-}
-
-Application& Application::GetInstance()
-{
-    static Application Instance(4, 4);
-    return Instance;
 }
 
 void Application::RegisterInputBindings()

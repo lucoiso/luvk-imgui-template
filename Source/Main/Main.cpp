@@ -4,7 +4,8 @@
 
 #include <cstdio>
 #include <exception>
-#include "Core/Application/Application.hpp"
+#include "UserInterface/Application/Application.hpp"
+#include "UserInterface/Layers/Overlay.hpp"
 
 #ifdef main
 #undef main
@@ -20,12 +21,15 @@ std::int32_t main()
 {
     try
     {
-        Core::Application& AppInstance = Core::Application::GetInstance();
+        if (const auto AppInstance = UserInterface::Application::GetInstance())
+        {
+            AppInstance->RegisterImGuiLayer<UserInterface::Overlay>();
 
-        do {}
-        while (AppInstance.Render());
+            do {}
+            while (AppInstance->Render());
 
-        return EXIT_SUCCESS;
+            return EXIT_SUCCESS;
+        }
     }
     catch (const std::exception& Exception)
     {

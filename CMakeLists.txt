@@ -3,7 +3,7 @@
 # Repo: https://github.com/lucoiso/luvk-imgui-template
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.28)
-PROJECT(TemplateProject VERSION 0.0.1 LANGUAGES C CXX)
+PROJECT(luvk-imgui-template VERSION 0.0.1 LANGUAGES C CXX)
 
 IF (POLICY CMP0048)
     CMAKE_POLICY(SET CMP0048 NEW)
