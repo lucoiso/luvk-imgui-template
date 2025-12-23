@@ -1,11 +1,10 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/overlay-exp
+// Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #pragma once
 
 #include <imgui.h>
-#include "UserInterface/Module.hpp"
 
 namespace UserInterface::Theme
 {
@@ -20,5 +19,5 @@ namespace UserInterface::Theme
         static constexpr ImVec4 TextWhite(0.95F, 0.95F, 0.95F, 1.00F);
     }
 
-    USERINTERFACEMODULE_API void PushDefaultTheme();
+    USERINTERFACE_API void PushDefaultTheme();
 }

@@ -23,12 +23,17 @@ std::int32_t main()
     {
         if (const auto AppInstance = UserInterface::Application::GetInstance())
         {
-            AppInstance->RegisterImGuiLayer<UserInterface::ImGuiLayer>();
+            if (AppInstance->Initialize())
+            {
+                AppInstance->RegisterImGuiLayer<UserInterface::ImGuiLayer>();
 
-            do {}
-            while (AppInstance->Render());
+                do {}
+                while (AppInstance->Render());
 
-            return EXIT_SUCCESS;
+                AppInstance->Shutdown();
+
+                return EXIT_SUCCESS;
+            }
         }
     }
     catch (const std::exception& Exception)

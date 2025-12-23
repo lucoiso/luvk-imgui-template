@@ -1,6 +1,6 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/overlay-exp
+// Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #pragma once
 
@@ -18,11 +18,11 @@ namespace luvk
 
 namespace Core
 {
-    class ImGuiMesh : public luvk::Mesh
+    class CORE_API ImGuiMesh : public luvk::Mesh
     {
-        const ImDrawData*        m_ActiveDrawData{nullptr};
-        luvk::Vector<ImDrawVert> m_Vertices{};
-        luvk::Vector<ImDrawIdx>  m_Indices{};
+        const ImDrawData*       m_ActiveDrawData{nullptr};
+        std::vector<ImDrawVert> m_Vertices{};
+        std::vector<ImDrawIdx>  m_Indices{};
 
     public:
         ImGuiMesh() = delete;
@@ -36,6 +36,6 @@ namespace Core
                            const std::shared_ptr<luvk::Material>& Font);
 
         void UpdateBuffers(const ImDrawData* DrawData, std::uint32_t CurrentFrame);
-        void Render(const VkCommandBuffer& CommandBuffer, std::uint32_t CurrentFrame) const override;
+        void Render(VkCommandBuffer CommandBuffer, std::uint32_t CurrentFrame) const override;
     };
 }

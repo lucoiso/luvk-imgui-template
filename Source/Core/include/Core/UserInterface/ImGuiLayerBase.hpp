@@ -1,6 +1,6 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/overlay-exp
+// Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #pragma once
 
@@ -23,7 +23,7 @@ namespace luvk
 
 namespace Core
 {
-    class ImGuiLayerBase
+    class CORE_API ImGuiLayerBase
     {
     protected:
         std::unique_ptr<ImGuiBackendSDL>    m_SdlBackend{};
@@ -32,7 +32,7 @@ namespace Core
     public:
         ImGuiLayerBase() = delete;
         explicit ImGuiLayerBase(SDL_Window*                                  Window,
-                                const VkInstance&                            Instance,
+                                VkInstance                                   Instance,
                                 std::shared_ptr<luvk::Device> const&         Device,
                                 std::shared_ptr<luvk::DescriptorPool> const& Pool,
                                 std::shared_ptr<luvk::SwapChain> const&      Swap,
@@ -42,7 +42,7 @@ namespace Core
         virtual void Draw();
         virtual void PushStyle() const;
 
-        void Render(const VkCommandBuffer& Cmd, std::uint32_t CurrentFrame) const;
+        void Render(VkCommandBuffer Cmd, std::uint32_t CurrentFrame) const;
 
         [[nodiscard]] bool ProcessEvent(const SDL_Event& Event) const;
     };

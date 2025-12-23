@@ -10,8 +10,8 @@ using namespace Core;
 InputManager::InputManager(SDL_Window* MainWindow)
     : m_MainWindow(MainWindow) {}
 
-void InputManager::BindEvent(const std::uint32_t                     Type,
-                             std::function<void(const SDL_Event&)>&& Callback)
+void InputManager::BindEvent(const std::uint32_t                      Type,
+                             std::function<void(const SDL_Event &)>&& Callback)
 {
     auto [Iterator, Inserted] = m_Bindings.try_emplace(Type, EventCallbacks{});
     Iterator->second.emplace_back(std::move(Callback));

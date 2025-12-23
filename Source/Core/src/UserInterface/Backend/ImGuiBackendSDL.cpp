@@ -470,7 +470,7 @@ ImVec2 ImGuiBackendSDL::GetWindowPos(ImGuiViewport* const Viewport)
     return {static_cast<float>(PosX), static_cast<float>(PosY)};
 }
 
-void ImGuiBackendSDL::SetWindowPos(ImGuiViewport* const Viewport, const ImVec2 Pos)
+void ImGuiBackendSDL::SetWindowPos(ImGuiViewport * const Viewport, const ImVec2 Pos)
 {
     SDL_SetWindowPosition(static_cast<SDL_Window*>(Viewport->PlatformHandle),
                           static_cast<int>(Pos.x),
@@ -485,7 +485,7 @@ ImVec2 ImGuiBackendSDL::GetWindowSize(ImGuiViewport* const Viewport)
     return {static_cast<float>(Width), static_cast<float>(Height)};
 }
 
-void ImGuiBackendSDL::SetWindowSize(ImGuiViewport* const Viewport, const ImVec2 Size)
+void ImGuiBackendSDL::SetWindowSize(ImGuiViewport * const Viewport, const ImVec2 Size)
 {
     SDL_SetWindowSize(static_cast<SDL_Window*>(Viewport->PlatformHandle),
                       static_cast<int>(Size.x),
@@ -517,7 +517,7 @@ void ImGuiBackendSDL::SetWindowAlpha(ImGuiViewport* const Viewport, const float 
     SDL_SetWindowOpacity(static_cast<SDL_Window*>(Viewport->PlatformHandle), Alpha);
 }
 
-int ImGuiBackendSDL::CreateVkSurface(ImGuiViewport* const Viewport, const ImU64 Instance, const void* Allocator, ImU64* OutSurface)
+int ImGuiBackendSDL::CreateVkSurface(ImGuiViewport * const Viewport, const ImU64 Instance, const void*Allocator, ImU64 * OutSurface)
 {
     const auto WindowHandle        = static_cast<SDL_Window*>(Viewport->PlatformHandle);
     const auto InstanceHandle      = reinterpret_cast<VkInstance>(Instance);

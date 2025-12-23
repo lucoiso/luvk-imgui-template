@@ -4,7 +4,9 @@
 
 #include "UserInterface/Application/Application.hpp"
 #include <imgui.h>
+#include <luvk/Libraries/ShaderCompiler.hpp>
 #include <luvk/Modules/Device.hpp>
+#include <luvk/Modules/Draw.hpp>
 #include <luvk/Modules/Synchronization.hpp>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_vulkan.h>
@@ -16,24 +18,43 @@ std::shared_ptr<Application> Application::s_Instance = nullptr;
 Application::Application(const std::uint32_t Width, const std::uint32_t Height)
     : ApplicationBase(Width, Height, SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN | SDL_WINDOW_TRANSPARENT | SDL_WINDOW_NOT_FOCUSABLE) {}
 
-Application::~Application()
+bool Application::Initialize()
+{
+    volkInitialize();
+
+    if (ApplicationBase::Initialize())
+    {
+        luvk::InitializeShaderCompiler();
+
+        volkLoadInstance(s_Instance->m_Renderer->GetInstance());
+        volkLoadDevice(s_Instance->m_DeviceModule->GetLogicalDevice());
+
+        s_Instance->RegisterInputBindings();
+        return true;
+    }
+
+    return false;
+}
+
+void Application::Shutdown()
 {
     m_DeviceModule->WaitIdle();
     m_ImGuiLayer.reset();
+    ApplicationBase::Shutdown();
 }
 
 std::shared_ptr<Application> Application::GetInstance()
 {
     if (!s_Instance)
     {
-        s_Instance = std::shared_ptr<Application>(new Application(4, 4));
-        if (!s_Instance->Initialize())
-        {
-            s_Instance.reset();
-            return nullptr;
-        }
+        s_Instance = std::shared_ptr<Application>(new Application(4, 4),
+                                                  [](const Application* Instance)
+                                                  {
+                                                      delete Instance;
 
-        s_Instance->RegisterInputBindings();
+                                                      luvk::ShutdownShaderCompiler();
+                                                      volkFinalize();
+                                                  });
     }
 
     return s_Instance;
@@ -43,12 +64,12 @@ void Application::PostRegisterImGuiLayer() const
 {
     m_ImGuiLayer->PushStyle();
 
-    m_Renderer->SetPreRenderCallback([this]([[maybe_unused]] const VkCommandBuffer& Cmd)
+    m_DrawModule->SetPreRenderCallback([this]([[maybe_unused]] const VkCommandBuffer Cmd)
     {
         m_ImGuiLayer->Draw();
     });
 
-    m_Renderer->SetDrawCallback([this](const VkCommandBuffer& Cmd)
+    m_DrawModule->SetDrawCallback([this](const VkCommandBuffer Cmd)
     {
         m_ImGuiLayer->Render(Cmd, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
     });

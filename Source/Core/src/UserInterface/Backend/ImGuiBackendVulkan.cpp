@@ -9,8 +9,6 @@
 #include <luvk/Modules/Memory.hpp>
 #include <luvk/Modules/SwapChain.hpp>
 #include <luvk/Modules/Synchronization.hpp>
-#include <luvk/Resources/Buffer.hpp>
-#include <luvk/Types/Array.hpp>
 #include "Core/Meshes/ImGuiMesh.hpp"
 
 #undef CreateWindow
@@ -18,10 +16,10 @@
 using namespace Core;
 
 // TODO : Use the same from the renderer
-constexpr luvk::Array<VkClearValue, 2> g_ClearValues{VkClearValue{.color = {0.2F, 0.2F, 0.2F, 1.F}},
-                                                     VkClearValue{.depthStencil = {1.F, 0U}}};
+constexpr std::array<VkClearValue, 2> g_ClearValues{VkClearValue{.color = {0.2F, 0.2F, 0.2F, 1.F}},
+                                                    VkClearValue{.depthStencil = {1.F, 0U}}};
 
-ImGuiBackendVulkan::ImGuiBackendVulkan(const VkInstance&                            Instance,
+ImGuiBackendVulkan::ImGuiBackendVulkan(const VkInstance                             Instance,
                                        const std::shared_ptr<luvk::Device>&         Device,
                                        const std::shared_ptr<luvk::DescriptorPool>& Pool,
                                        const std::shared_ptr<luvk::SwapChain>&      Swap,
@@ -61,7 +59,7 @@ void ImGuiBackendVulkan::NewFrame() const
     ImGui::NewFrame();
 }
 
-void ImGuiBackendVulkan::Render(const VkCommandBuffer& Cmd, const std::uint32_t CurrentFrame) const
+void ImGuiBackendVulkan::Render(const VkCommandBuffer Cmd, const std::uint32_t CurrentFrame) const
 {
     ImGui::Render();
     const ImDrawData* const DrawData = ImGui::GetDrawData();
@@ -70,7 +68,7 @@ void ImGuiBackendVulkan::Render(const VkCommandBuffer& Cmd, const std::uint32_t 
     m_Mesh->Render(Cmd, CurrentFrame);
 }
 
-void ImGuiBackendVulkan::CreateWindow(ImGuiViewport* const Viewport)
+void ImGuiBackendVulkan::CreateWindow(ImGuiViewport * const Viewport)
 {
     const auto  Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
     auto* const Data    = new ViewportData();
@@ -115,7 +113,7 @@ void ImGuiBackendVulkan::CreateWindow(ImGuiViewport* const Viewport)
     Viewport->RendererUserData = static_cast<void*>(Data);
 }
 
-void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport* const Viewport)
+void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport * const Viewport)
 {
     if (auto* Data = static_cast<ViewportData*>(Viewport->RendererUserData);
         Data != nullptr)
@@ -142,7 +140,7 @@ void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport* const Viewport)
     Viewport->RendererUserData = nullptr;
 }
 
-void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport* const Viewport, const ImVec2 Size)
+void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport * const Viewport, const ImVec2 Size)
 {
     if (const auto* Data = static_cast<ViewportData*>(Viewport->RendererUserData);
         Data != nullptr)
@@ -156,17 +154,21 @@ void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport* const Viewport, const ImVe
     }
 }
 
-void ImGuiBackendVulkan::RenderWindow(ImGuiViewport* const Viewport, void*)
+void ImGuiBackendVulkan::RenderWindow(ImGuiViewport * const Viewport, void*)
 {
     const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
     const auto Data    = static_cast<ViewportData*>(Viewport->RendererUserData);
     const auto Device  = Backend->GetDevice();
 
     Data->Sync->AdvanceFrame();
-    const auto                        CurrentFrame = static_cast<std::uint32_t>(Data->Sync->GetCurrentFrame());
-    luvk::Synchronization::FrameData& Frame        = Data->Sync->GetFrame(CurrentFrame);
+    const auto       CurrentFrame = static_cast<std::uint32_t>(Data->Sync->GetCurrentFrame());
+    luvk::FrameData& Frame        = Data->Sync->GetFrame(CurrentFrame);
 
-    Device->Wait(Frame.InFlight, VK_TRUE, UINT64_MAX);
+    if (Frame.Submitted)
+    {
+        Device->Wait(Frame.InFlight, VK_TRUE, UINT64_MAX);
+    }
+
     vkAcquireNextImageKHR(Device->GetLogicalDevice(),
                           Data->SwapChain->GetHandle(),
                           UINT64_MAX,
@@ -196,28 +198,33 @@ void ImGuiBackendVulkan::RenderWindow(ImGuiViewport* const Viewport, void*)
     vkEndCommandBuffer(Frame.CommandBuffer);
 
     constexpr VkPipelineStageFlags WaitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    const VkSubmitInfo             SubmitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+    const VkSemaphore              Semaphore = Data->Sync->GetRenderFinished(Data->ImageIndex);
+
+    const VkSubmitInfo SubmitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                                   .waitSemaphoreCount = 1U,
                                   .pWaitSemaphores = &Frame.ImageAvailable,
                                   .pWaitDstStageMask = &WaitStage,
                                   .commandBufferCount = 1U,
                                   .pCommandBuffers = &Frame.CommandBuffer,
                                   .signalSemaphoreCount = 1U,
-                                  .pSignalSemaphores = &Data->Sync->GetRenderFinished(Data->ImageIndex)};
+                                  .pSignalSemaphores = &Semaphore};
 
     vkQueueSubmit(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()), 1U, &SubmitInfo, Frame.InFlight);
 }
 
-void ImGuiBackendVulkan::SwapBuffers(ImGuiViewport* const Viewport, void*)
+void ImGuiBackendVulkan::SwapBuffers(ImGuiViewport * const Viewport, void*)
 {
     const auto Data   = static_cast<ViewportData*>(Viewport->RendererUserData);
     const auto Device = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData)->GetDevice();
 
+    const VkSemaphore    Semaphore = Data->Sync->GetRenderFinished(Data->ImageIndex);
+    const VkSwapchainKHR SwapChain = Data->SwapChain->GetHandle();
+
     const VkPresentInfoKHR PresentInfo{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
                                        .waitSemaphoreCount = 1U,
-                                       .pWaitSemaphores = &Data->Sync->GetRenderFinished(Data->ImageIndex),
+                                       .pWaitSemaphores = &Semaphore,
                                        .swapchainCount = 1U,
-                                       .pSwapchains = &Data->SwapChain->GetHandle(),
+                                       .pSwapchains = &SwapChain,
                                        .pImageIndices = &Data->ImageIndex};
 
     vkQueuePresentKHR(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()), &PresentInfo);

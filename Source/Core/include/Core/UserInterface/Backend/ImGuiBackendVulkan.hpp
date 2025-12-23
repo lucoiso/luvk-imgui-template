@@ -1,6 +1,6 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/overlay-exp
+// Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #pragma once
 
@@ -26,28 +26,27 @@ namespace Core
 {
     class ImGuiMesh;
 
-    struct ViewportData
+    struct CORE_API ViewportData
     {
+        std::uint32_t                          ImageIndex{0U};
+        VkSurfaceKHR                           Surface{VK_NULL_HANDLE};
         std::shared_ptr<luvk::SwapChain>       SwapChain{nullptr};
         std::shared_ptr<luvk::CommandPool>     CommandPool{nullptr};
         std::shared_ptr<luvk::Synchronization> Sync{nullptr};
         std::shared_ptr<ImGuiMesh>             Mesh{nullptr};
-        VkSurfaceKHR                           Surface{VK_NULL_HANDLE};
-        std::uint32_t                          ImageIndex{0U};
     };
 
-    class ImGuiBackendVulkan
+    class CORE_API ImGuiBackendVulkan
     {
-        std::shared_ptr<ImGuiMesh> m_Mesh{};
-
         VkInstance                       m_Instance{VK_NULL_HANDLE};
         std::shared_ptr<luvk::Device>    m_Device{};
         std::shared_ptr<luvk::SwapChain> m_SwapChain{};
         std::shared_ptr<luvk::Memory>    m_Memory{};
+        std::shared_ptr<ImGuiMesh>       m_Mesh{};
 
     public:
         ImGuiBackendVulkan() = delete;
-        explicit ImGuiBackendVulkan(const VkInstance&                            Instance,
+        explicit ImGuiBackendVulkan(const VkInstance                             Instance,
                                     const std::shared_ptr<luvk::Device>&         Device,
                                     const std::shared_ptr<luvk::DescriptorPool>& Pool,
                                     const std::shared_ptr<luvk::SwapChain>&      Swap,
@@ -55,9 +54,9 @@ namespace Core
         ~ImGuiBackendVulkan();
 
         void NewFrame() const;
-        void Render(const VkCommandBuffer& Cmd, std::uint32_t CurrentFrame) const;
+        void Render(VkCommandBuffer Cmd, std::uint32_t CurrentFrame) const;
 
-        [[nodiscard]] const VkInstance& GetInstance() const
+        [[nodiscard]] VkInstance GetInstance() const
         {
             return m_Instance;
         }

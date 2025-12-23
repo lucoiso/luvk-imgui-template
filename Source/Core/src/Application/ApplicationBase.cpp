@@ -16,9 +16,9 @@
 #include <luvk/Modules/SwapChain.hpp>
 #include <luvk/Modules/Synchronization.hpp>
 #include <luvk/Modules/ThreadPool.hpp>
-#include <luvk/Types/Vector.hpp>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_vulkan.h>
+#include "luvk/Modules/Draw.hpp"
 
 using namespace Core;
 
@@ -32,7 +32,6 @@ ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t 
       m_Height(static_cast<std::int32_t>(Height)),
       m_Renderer(luvk::CreateModule<luvk::Renderer>())
 {
-    volkInitialize();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
     m_Title = g_InstArguments.ApplicationName;
@@ -47,19 +46,10 @@ ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t 
     SDL_StartTextInput(m_Window);
 }
 
-ApplicationBase::~ApplicationBase()
-{
-    m_DeviceModule->WaitIdle();
-    luvk::ShutdownShaderCompiler();
-
-    SDL_DestroyWindow(m_Window);
-    SDL_Quit();
-
-    volkFinalize();
-}
-
 bool ApplicationBase::Initialize()
 {
+    volkInitialize();
+
     RegisterModules();
     SetupExtensions();
 
@@ -70,16 +60,32 @@ bool ApplicationBase::Initialize()
 
     if (InitializeModules())
     {
+        m_CanRender = true;
         volkLoadInstance(m_Renderer->GetInstance());
         volkLoadDevice(m_DeviceModule->GetLogicalDevice());
-        luvk::InitializeShaderCompiler();
-        m_Renderer->InitializeRenderLoop();
-        m_CanRender = true;
-
         return true;
     }
 
     return false;
+}
+
+void ApplicationBase::Shutdown()
+{
+    SDL_DestroyWindow(m_Window);
+    SDL_Quit();
+    volkFinalize();
+
+    m_DebugModule.reset();
+    m_SwapChainModule.reset();
+    m_DeviceModule.reset();
+    m_MemoryModule.reset();
+    m_CommandPoolModule.reset();
+    m_SynchronizationModule.reset();
+    m_ThreadPoolModule.reset();
+    m_DescriptorPoolModule.reset();
+    m_DrawModule.reset();
+
+    m_Renderer.reset();
 }
 
 bool ApplicationBase::Render()
@@ -129,12 +135,7 @@ void ApplicationBase::SetTitle(const std::string_view Title)
 
 void ApplicationBase::RegisterModules()
 {
-#ifdef _DEBUG
-    m_DebugModule = luvk::CreateModule<luvk::Debug>(m_Renderer);
-#else
-    m_DebugModule = nullptr;
-#endif
-
+    m_DebugModule           = luvk::CreateModule<luvk::Debug>(m_Renderer);
     m_DeviceModule          = luvk::CreateModule<luvk::Device>(m_Renderer);
     m_MemoryModule          = luvk::CreateModule<luvk::Memory>(m_Renderer, m_DeviceModule);
     m_SwapChainModule       = luvk::CreateModule<luvk::SwapChain>(m_DeviceModule, m_MemoryModule);
@@ -142,6 +143,7 @@ void ApplicationBase::RegisterModules()
     m_SynchronizationModule = luvk::CreateModule<luvk::Synchronization>(m_DeviceModule, m_SwapChainModule, m_CommandPoolModule);
     m_ThreadPoolModule      = luvk::CreateModule<luvk::ThreadPool>();
     m_DescriptorPoolModule  = luvk::CreateModule<luvk::DescriptorPool>(m_DeviceModule);
+    m_DrawModule            = luvk::CreateModule<luvk::Draw>(m_DeviceModule, m_SwapChainModule, m_SynchronizationModule);
 
     m_Renderer->RegisterModules({.DebugModule = m_DebugModule,
                                  .DeviceModule = m_DeviceModule,
@@ -150,7 +152,8 @@ void ApplicationBase::RegisterModules()
                                  .CommandPoolModule = m_CommandPoolModule,
                                  .SynchronizationModule = m_SynchronizationModule,
                                  .ThreadPoolModule = m_ThreadPoolModule,
-                                 .DescriptorPoolModule = m_DescriptorPoolModule});
+                                 .DescriptorPoolModule = m_DescriptorPoolModule,
+                                 .DrawModule = m_DrawModule});
 }
 
 void ApplicationBase::SetupExtensions() const
@@ -164,7 +167,7 @@ void ApplicationBase::SetupExtensions() const
         return;
     }
 
-    luvk::Vector<char const*> ExtensionsData(RawExtensionsData, RawExtensionsData + NumExtensions);
+    std::vector ExtensionsData(RawExtensionsData, RawExtensionsData + NumExtensions);
 
     for (char const* Ext : ExtensionsData)
     {
@@ -191,14 +194,15 @@ bool ApplicationBase::InitializeModules() const
 
     m_ThreadPoolModule->Start(std::thread::hardware_concurrency());
 
-    constexpr luvk::Array Sizes = {VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
-                                   VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024},
-                                   VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024}};
+    constexpr std::array Sizes{VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
+                               VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024},
+                               VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024}};
 
     m_DescriptorPoolModule->CreateDescriptorPool(1000, Sizes);
 
     m_SynchronizationModule->Initialize();
     m_SynchronizationModule->SetupFrames();
+
     return true;
 }
 
@@ -214,11 +218,6 @@ bool ApplicationBase::InitializeDeviceModule() const
     m_DeviceModule->SetSurface(Surface);
 
     auto& DevExt = m_DeviceModule->GetExtensions();
-    if (DevExt.HasAvailableExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME))
-    {
-        DevExt.SetExtensionState("", VK_EXT_MESH_SHADER_EXTENSION_NAME, true);
-    }
-
     if (DevExt.HasAvailableExtension(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME))
     {
         DevExt.SetExtensionState("", VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, true);
@@ -229,19 +228,15 @@ bool ApplicationBase::InitializeDeviceModule() const
         DevExt.SetExtensionState("", VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, true);
     }
 
-    constexpr VkPhysicalDeviceMeshShaderFeaturesEXT MeshShaderFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
-                                                                       .taskShader = VK_TRUE,
-                                                                       .meshShader = VK_TRUE};
-
-    luvk::UnorderedMap<std::uint32_t, std::uint32_t> DeviceQueueMap{};
+    std::unordered_map<std::uint32_t, std::uint32_t> DeviceQueueMap{};
     const auto&                                      QueueProperties = m_DeviceModule->GetDeviceQueueFamilyProperties();
     std::uint32_t                                    Iterator        = 0U;
 
-    for (const auto& Q : QueueProperties)
+    for (const auto& QueueIt : QueueProperties)
     {
-        DeviceQueueMap.emplace(Iterator++, Q.queueCount);
+        DeviceQueueMap.emplace(Iterator++, QueueIt.queueCount);
     }
 
-    m_DeviceModule->CreateLogicalDevice(std::move(DeviceQueueMap), &MeshShaderFeatures);
+    m_DeviceModule->CreateLogicalDevice(std::move(DeviceQueueMap), nullptr);
     return true;
 }

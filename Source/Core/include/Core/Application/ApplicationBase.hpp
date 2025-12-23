@@ -1,6 +1,6 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/overlay-exp
+// Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #pragma once
 
@@ -21,11 +21,12 @@ namespace luvk
     class Synchronization;
     class ThreadPool;
     class DescriptorPool;
+    class Draw;
 } // namespace luvk
 
 namespace Core
 {
-    class ApplicationBase
+    class CORE_API ApplicationBase
     {
     protected:
         bool m_CanRender{false};
@@ -33,9 +34,8 @@ namespace Core
 
         std::int32_t m_Width{};
         std::int32_t m_Height{};
+        float        m_DeltaTime{0.f};
         std::string  m_Title{};
-
-        float m_DeltaTime{0.f};
 
         SDL_Window*                   m_Window{};
         std::shared_ptr<InputManager> m_Input;
@@ -49,12 +49,15 @@ namespace Core
         std::shared_ptr<luvk::Synchronization> m_SynchronizationModule{};
         std::shared_ptr<luvk::ThreadPool>      m_ThreadPoolModule{};
         std::shared_ptr<luvk::DescriptorPool>  m_DescriptorPoolModule{};
+        std::shared_ptr<luvk::Draw>            m_DrawModule{};
 
     public:
         explicit ApplicationBase(std::uint32_t Width, std::uint32_t Height, SDL_WindowFlags Flags);
-        virtual  ~ApplicationBase();
+        virtual  ~ApplicationBase() = default;
 
         virtual bool Initialize();
+        virtual void Shutdown();
+
         virtual bool Render();
 
         [[nodiscard]] constexpr std::uint32_t GetWidth() const noexcept

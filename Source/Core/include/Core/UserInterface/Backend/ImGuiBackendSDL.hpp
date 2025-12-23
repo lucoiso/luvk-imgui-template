@@ -1,11 +1,11 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/overlay-exp
+// Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #pragma once
 
+#include <array>
 #include <imgui.h>
-#include <luvk/Types/Array.hpp>
 #include <SDL3/SDL_events.h>
 
 class SDL_Window;
@@ -14,10 +14,10 @@ struct ImGuiViewport;
 
 namespace Core
 {
-    class ImGuiBackendSDL
+    class CORE_API ImGuiBackendSDL
     {
-        SDL_Window*                  m_Window{};
-        luvk::Array<SDL_Cursor*, 11> m_MouseCursors{};
+        SDL_Window*                 m_Window{};
+        std::array<SDL_Cursor*, 11> m_MouseCursors{};
 
     public:
         ImGuiBackendSDL() = delete;
