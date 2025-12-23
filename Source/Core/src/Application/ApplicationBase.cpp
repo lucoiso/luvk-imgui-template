@@ -73,7 +73,6 @@ void ApplicationBase::Shutdown()
 {
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
-    volkFinalize();
 
     m_DebugModule.reset();
     m_SwapChainModule.reset();
@@ -86,6 +85,8 @@ void ApplicationBase::Shutdown()
     m_DrawModule.reset();
 
     m_Renderer.reset();
+
+    volkFinalize();
 }
 
 bool ApplicationBase::Render()

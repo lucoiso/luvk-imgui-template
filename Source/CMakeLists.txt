@@ -2,6 +2,9 @@
 # Year: 2025
 # Repo: https://github.com/lucoiso/luvk-imgui-template
 
+# Project Options
+# SET(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+
 # SDL3 Options
 IF(BUILD_SHARED_LIBS)
     SET(SDL_SHARED ON CACHE BOOL "" FORCE)
@@ -96,11 +99,6 @@ IF(BUILD_SHARED_LIBS)
 ELSE()
     ADD_LIBRARY(imgui STATIC ${IMGUI_PRIVATE_SOURCES})
 ENDIF()
-
-SET_TARGET_PROPERTIES(imgui PROPERTIES
-                      POSITION_INDEPENDENT_CODE ON
-                      DEBUG_POSTFIX "d"
-)
 
 TARGET_INCLUDE_DIRECTORIES(imgui PUBLIC ${imgui_SOURCE_DIR})
 

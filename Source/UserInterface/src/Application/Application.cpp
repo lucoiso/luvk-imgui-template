@@ -41,6 +41,8 @@ void Application::Shutdown()
     m_DeviceModule->WaitIdle();
     m_ImGuiLayer.reset();
     ApplicationBase::Shutdown();
+
+    s_Instance.reset();
 }
 
 std::shared_ptr<Application> Application::GetInstance()
