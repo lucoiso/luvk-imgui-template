@@ -16,8 +16,8 @@
 using namespace Core;
 
 // TODO : Use the same from the renderer
-constexpr std::array<VkClearValue, 2> g_ClearValues{VkClearValue{.color = {0.2F, 0.2F, 0.2F, 1.F}},
-                                                    VkClearValue{.depthStencil = {1.F, 0U}}};
+constexpr std::array g_ClearValues{VkClearValue{.color = {0.2F, 0.2F, 0.2F, 1.F}},
+                                   VkClearValue{.depthStencil = {1.F, 0U}}};
 
 ImGuiBackendVulkan::ImGuiBackendVulkan(const VkInstance                             Instance,
                                        const std::shared_ptr<luvk::Device>&         Device,
@@ -68,7 +68,7 @@ void ImGuiBackendVulkan::Render(const VkCommandBuffer Cmd, const std::uint32_t C
     m_Mesh->Render(Cmd, CurrentFrame);
 }
 
-void ImGuiBackendVulkan::CreateWindow(ImGuiViewport * const Viewport)
+void ImGuiBackendVulkan::CreateWindow(ImGuiViewport* const Viewport)
 {
     const auto  Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
     auto* const Data    = new ViewportData();
@@ -113,7 +113,7 @@ void ImGuiBackendVulkan::CreateWindow(ImGuiViewport * const Viewport)
     Viewport->RendererUserData = static_cast<void*>(Data);
 }
 
-void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport * const Viewport)
+void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport* const Viewport)
 {
     if (auto* Data = static_cast<ViewportData*>(Viewport->RendererUserData);
         Data != nullptr)
@@ -140,7 +140,7 @@ void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport * const Viewport)
     Viewport->RendererUserData = nullptr;
 }
 
-void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport * const Viewport, const ImVec2 Size)
+void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport* const Viewport, const ImVec2 Size)
 {
     if (const auto* Data = static_cast<ViewportData*>(Viewport->RendererUserData);
         Data != nullptr)
@@ -154,7 +154,7 @@ void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport * const Viewport, const ImV
     }
 }
 
-void ImGuiBackendVulkan::RenderWindow(ImGuiViewport * const Viewport, void*)
+void ImGuiBackendVulkan::RenderWindow(ImGuiViewport* const Viewport, void*)
 {
     const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
     const auto Data    = static_cast<ViewportData*>(Viewport->RendererUserData);
@@ -212,7 +212,7 @@ void ImGuiBackendVulkan::RenderWindow(ImGuiViewport * const Viewport, void*)
     vkQueueSubmit(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()), 1U, &SubmitInfo, Frame.InFlight);
 }
 
-void ImGuiBackendVulkan::SwapBuffers(ImGuiViewport * const Viewport, void*)
+void ImGuiBackendVulkan::SwapBuffers(ImGuiViewport* const Viewport, void*)
 {
     const auto Data   = static_cast<ViewportData*>(Viewport->RendererUserData);
     const auto Device = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData)->GetDevice();

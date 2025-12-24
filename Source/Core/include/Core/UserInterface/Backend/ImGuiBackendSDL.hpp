@@ -8,6 +8,8 @@
 #include <imgui.h>
 #include <SDL3/SDL_events.h>
 
+#undef CreateWindow
+
 class SDL_Window;
 class SDL_Cursor;
 struct ImGuiViewport;

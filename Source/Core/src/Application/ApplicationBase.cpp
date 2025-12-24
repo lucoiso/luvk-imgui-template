@@ -6,7 +6,6 @@
 #include <execution>
 #include <ostream>
 #include <glm/gtc/matrix_transform.hpp>
-#include <luvk/Libraries/ShaderCompiler.hpp>
 #include <luvk/Modules/CommandPool.hpp>
 #include <luvk/Modules/Debug.hpp>
 #include <luvk/Modules/DescriptorPool.hpp>
@@ -217,17 +216,6 @@ bool ApplicationBase::InitializeDeviceModule() const
 
     m_DeviceModule->SetPhysicalDevice(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     m_DeviceModule->SetSurface(Surface);
-
-    auto& DevExt = m_DeviceModule->GetExtensions();
-    if (DevExt.HasAvailableExtension(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME))
-    {
-        DevExt.SetExtensionState("", VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, true);
-    }
-
-    if (DevExt.HasAvailableExtension(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME))
-    {
-        DevExt.SetExtensionState("", VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, true);
-    }
 
     std::unordered_map<std::uint32_t, std::uint32_t> DeviceQueueMap{};
     const auto&                                      QueueProperties = m_DeviceModule->GetDeviceQueueFamilyProperties();

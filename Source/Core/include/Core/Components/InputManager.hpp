@@ -12,7 +12,7 @@ namespace Core
 {
     class CORE_API InputManager
     {
-        using EventCallbacks = std::vector<std::function<void(const SDL_Event &)>>;
+        using EventCallbacks = std::vector<std::function<void(const SDL_Event&)>>;
 
         bool m_Running{true};
         bool m_LeftHeld{false};
@@ -27,7 +27,7 @@ namespace Core
         explicit InputManager(SDL_Window* MainWindow);
         ~InputManager() = default;
 
-        void BindEvent(std::uint32_t Type, std::function<void(const SDL_Event &)>&& Callback);
+        void BindEvent(std::uint32_t Type, std::function<void(const SDL_Event&)>&& Callback);
         void ProcessEvents();
 
         [[nodiscard]] constexpr bool Running() const noexcept

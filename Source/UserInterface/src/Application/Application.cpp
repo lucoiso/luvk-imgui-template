@@ -4,7 +4,6 @@
 
 #include "UserInterface/Application/Application.hpp"
 #include <imgui.h>
-#include <luvk/Libraries/ShaderCompiler.hpp>
 #include <luvk/Modules/Device.hpp>
 #include <luvk/Modules/Draw.hpp>
 #include <luvk/Modules/Synchronization.hpp>
@@ -24,8 +23,6 @@ bool Application::Initialize()
 
     if (ApplicationBase::Initialize())
     {
-        luvk::InitializeShaderCompiler();
-
         volkLoadInstance(s_Instance->m_Renderer->GetInstance());
         volkLoadDevice(s_Instance->m_DeviceModule->GetLogicalDevice());
 
@@ -53,8 +50,6 @@ std::shared_ptr<Application> Application::GetInstance()
                                                   [](const Application* Instance)
                                                   {
                                                       delete Instance;
-
-                                                      luvk::ShutdownShaderCompiler();
                                                       volkFinalize();
                                                   });
     }
