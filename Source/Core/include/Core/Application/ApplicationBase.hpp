@@ -110,6 +110,7 @@ namespace Core
     protected:
         virtual void PreRenderCallback(VkCommandBuffer CommandBuffer);
         virtual void DrawCallback(VkCommandBuffer CommandBuffer);
+        virtual void UserEventCallback(const SDL_Event& Event);
 
     private:
         void PostRegisterImGuiLayer();

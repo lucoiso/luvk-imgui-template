@@ -148,6 +148,11 @@ void ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer)
     m_ImGuiLayer->Render(CommandBuffer, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
 }
 
+void ApplicationBase::UserEventCallback(const SDL_Event& Event)
+{
+    [[maybe_unused]] auto _ = m_ImGuiLayer && m_ImGuiLayer->ProcessEvent(Event);
+}
+
 void ApplicationBase::PostRegisterImGuiLayer()
 {
     m_ImGuiLayer->PushStyle();
@@ -188,7 +193,7 @@ void ApplicationBase::RegisterInputBindings()
     m_Input->BindEvent(SDL_EVENT_USER,
                        [&](const SDL_Event& Event)
                        {
-                           [[maybe_unused]] auto _ = m_ImGuiLayer && m_ImGuiLayer->ProcessEvent(Event);
+                           UserEventCallback(Event);
                        });
 }
 
