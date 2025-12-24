@@ -1,4 +1,4 @@
-name: CMake Build Workflow
+name: Build & Upload
 
 on:
   push:
@@ -10,49 +10,34 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
+            suffix: windows
           - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
+            suffix: linux
           - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+            suffix: macos
 
     steps:
-      - name: Checkout & Init Submodules
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           submodules: recursive
-
-      - name: Set reusable strings
-        id: strings
-        shell: bash
-        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
       - name: Get CMake and Ninja
         uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: latest
-          ninjaVersion: latest
 
       - name: (Windows) Setup MSVC
         if: matrix.os == 'windows-latest'
         uses: TheMrMilchmann/setup-msvc-dev@v3
-        with:
-          arch: x64
 
       - name: (Ubuntu) Install Dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -67,8 +52,48 @@ jobs:
         run: |
           brew install libxcb xorgproto
 
-      - name: Configure
-        run: cmake -S . -B ${{ steps.strings.outputs.build-output-dir }} -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Configure, Build & Install
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+          cmake --install build --prefix ./dist --config Release
 
-      - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.suffix }}
+          path: ./dist
+
+  upload:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./assets
+
+      - name: Get Short SHA
+        id: vars
+        run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Package Artifacts (ZIP)
+        run: |
+          cd assets
+          zip -r ../windows-build.zip binary-windows/
+          zip -r ../linux-build.zip binary-linux/
+          zip -r ../macos-build.zip binary-macos/
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ steps.vars.outputs.sha_short }}
+          name: Build ${{ steps.vars.outputs.sha_short }}
+          draft: false
+          prerelease: false
+          files: |
+            windows-build.zip
+            linux-build.zip
+            macos-build.zip
