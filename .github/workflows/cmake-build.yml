@@ -15,6 +15,12 @@ permissions:
 jobs:
   configure:
     runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+          - os: ubuntu-latest
+          - os: macos-latest
 
     steps:
       - name: Checkout
