@@ -3,6 +3,7 @@
 // Repo: https://github.com/lucoiso/luvk-imgui-template
 
 #include "Core/Meshes/ImGuiMesh.hpp"
+#include <cstring>
 #include <imgui.h>
 #include <luvk/Modules/SwapChain.hpp>
 #include <luvk/Resources/Buffer.hpp>
