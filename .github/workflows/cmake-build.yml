@@ -13,18 +13,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  configure:
     runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            suffix: windows
-          - os: ubuntu-latest
-            suffix: linux
-          - os: macos-latest
-            suffix: macos
 
     steps:
       - name: Checkout
@@ -38,6 +28,8 @@ jobs:
       - name: (Windows) Setup MSVC
         if: matrix.os == 'windows-latest'
         uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: x64
 
       - name: (Ubuntu) Install Dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -52,38 +44,45 @@ jobs:
         run: |
           brew install libxcb xorgproto
 
+  build:
+    runs-on: ${{ matrix.os }}
+    needs: configure
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+      fail-fast: false
+
+    steps:
       - name: Configure, Build & Install
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
           cmake --install build --prefix ./dist --config Release
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: binary-${{ matrix.suffix }}
-          path: ./dist
-
   upload:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Download All Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./assets
-
       - name: Get Short SHA
         id: vars
         run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      - name: Package Artifacts (ZIP)
+      - name: Package Artifacts
         run: |
-          cd assets
-          zip -r ../windows-build.zip binary-windows/
-          zip -r ../linux-build.zip binary-linux/
-          zip -r ../macos-build.zip binary-macos/
+          cd dist
+          zip -r ../windows-binaries.zip binary-windows/
+          zip -r ../linux-binaries.zip binary-linux/
+          zip -r ../macos-binaries.zip binary-macos/
           cd ..
 
       - name: Create GitHub Release
@@ -94,6 +93,6 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            windows-build.zip
-            linux-build.zip
-            macos-build.zip
+            windows-binaries.zip
+            linux-binaries.zip
+            macos-binaries.zip
