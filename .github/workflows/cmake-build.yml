@@ -84,9 +84,9 @@ jobs:
 
       - name: Package Binaries (Clean)
         run: |
-          cd artifacts/binary-windows/bin && zip -r ../../../windows-x64.zip . && cd ../../..
-          cd artifacts/binary-linux/bin && zip -r ../../../linux-x64.zip . && cd ../../..
-          cd artifacts/binary-macos && zip -r ../../macos-universal.zip *.app && cd ../..
+          cd artifacts/binary-windows && zip -r ../../windows-x64.zip . && cd ../..
+          cd artifacts/binary-linux && zip -r ../../linux-x64.zip . && cd ../..
+          cd artifacts/binary-macos && zip -r ../../macos-universal.zip . && cd ../..
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
