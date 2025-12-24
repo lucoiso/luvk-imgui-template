@@ -13,92 +13,79 @@ permissions:
   contents: write
 
 jobs:
-  configure:
+  build-and-install:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
+            suffix: windows
           - os: ubuntu-latest
+            suffix: linux
           - os: macos-latest
+            suffix: macos
 
     steps:
-      - name: Checkout
+      - name: 1. Checkout Code
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Get CMake and Ninja
+      - name: 2. Setup Environment (Common)
         uses: lukka/get-cmake@latest
 
-      - name: (Windows) Setup MSVC
+      - name: 2.1 (Windows) Setup MSVC
         if: matrix.os == 'windows-latest'
         uses: TheMrMilchmann/setup-msvc-dev@v3
         with:
           arch: x64
 
-      - name: (Ubuntu) Install Dependencies
+      - name: 2.2 (Ubuntu) Install Deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgl-dev libgl1-mesa-dev libx11-dev libx11-xcb-dev \
-            libfontenc-dev libice-dev libsm-dev libxau-dev libxaw7-dev
+          sudo apt-get install -y libgl-dev libgl1-mesa-dev libx11-dev libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxau-dev libxaw7-dev
 
-      - name: (macOS) Install Dependencies
+      - name: 2.3 (macOS) Install Deps
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install libxcb xorgproto
+        run: brew install libxcb xorgproto
 
-  build:
-    runs-on: ${{ matrix.os }}
-    needs: configure
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-      fail-fast: false
+      - name: 3. CMake Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-    steps:
-      - name: Configure, Build & Install
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --config Release
-          cmake --install build --prefix ./dist --config Release
+      - name: 4. CMake Build
+        run: cmake --build build --config Release
+
+      - name: 5. CMake Install
+        run: cmake --install build --prefix ./dist --config Release
+
+      - name: 6. Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.suffix }}
+          path: ./dist
 
   upload:
-    needs: build
+    needs: build-and-install
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./assets
+
       - name: Get Short SHA
         id: vars
         run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      - name: Package Artifacts
-        run: |
-          cd dist
-          zip -r ../windows-binaries.zip binary-windows/
-          zip -r ../linux-binaries.zip binary-linux/
-          zip -r ../macos-binaries.zip binary-macos/
-          cd ..
-
-      - name: Create GitHub Release
+      - name: Create Release and Upload
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ steps.vars.outputs.sha_short }}
           name: Build ${{ steps.vars.outputs.sha_short }}
-          draft: false
-          prerelease: false
           files: |
-            windows-binaries.zip
-            linux-binaries.zip
-            macos-binaries.zip
+            assets/binary-windows/**/*
+            assets/binary-linux/**/*
+            assets/binary-macos/**/*
