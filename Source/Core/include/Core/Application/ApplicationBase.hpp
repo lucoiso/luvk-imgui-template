@@ -6,13 +6,14 @@
 
 #include <memory>
 #include <string>
+#include <luvk/Modules/Renderer.hpp>
 #include "Core/Components/InputManager.hpp"
+#include "Core/UserInterface/ImGuiLayerBase.hpp"
 
 class SDL_Window;
 
 namespace luvk
 {
-    class Renderer;
     class Debug;
     class SwapChain;
     class Device;
@@ -37,8 +38,9 @@ namespace Core
         float        m_DeltaTime{0.f};
         std::string  m_Title{};
 
-        SDL_Window*                   m_Window{};
-        std::shared_ptr<InputManager> m_Input;
+        SDL_Window*                     m_Window{};
+        std::shared_ptr<InputManager>   m_Input;
+        std::unique_ptr<ImGuiLayerBase> m_ImGuiLayer;
 
         std::shared_ptr<luvk::Renderer>        m_Renderer{};
         std::shared_ptr<luvk::Debug>           m_DebugModule{};
@@ -59,6 +61,19 @@ namespace Core
         virtual void Shutdown();
 
         virtual bool Render();
+
+        template <typename ImGuiLayerType, typename... Args> requires std::is_base_of_v<Core::ImGuiLayerBase, ImGuiLayerType>
+        void RegisterImGuiLayer(Args&&... InArguments)
+        {
+            m_ImGuiLayer = std::make_unique<ImGuiLayerType>(m_Window,
+                                                            m_Renderer->GetInstance(),
+                                                            m_DeviceModule,
+                                                            m_DescriptorPoolModule,
+                                                            m_SwapChainModule,
+                                                            m_MemoryModule,
+                                                            std::forward<Args>(InArguments)...);
+            PostRegisterImGuiLayer();
+        }
 
         [[nodiscard]] constexpr std::uint32_t GetWidth() const noexcept
         {
@@ -92,7 +107,13 @@ namespace Core
             return m_Window;
         }
 
+    protected:
+        virtual void PreRenderCallback(VkCommandBuffer CommandBuffer);
+        virtual void DrawCallback(VkCommandBuffer CommandBuffer);
+
     private:
+        void PostRegisterImGuiLayer();
+        void RegisterInputBindings();
         void               RegisterModules();
         void               SetupExtensions() const;
         [[nodiscard]] bool InitializeModules() const;

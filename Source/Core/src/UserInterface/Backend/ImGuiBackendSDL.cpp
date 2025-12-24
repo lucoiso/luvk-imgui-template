@@ -10,6 +10,8 @@
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
 
+#undef CreateWindow
+
 using namespace Core;
 
 static ImGuiKey SDLKeyToImGuiKey(const std::uint32_t Keycode, const SDL_Scancode Scancode)

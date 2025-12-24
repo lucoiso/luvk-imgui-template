@@ -6,7 +6,6 @@
 #include <imgui.h>
 #include <luvk/Modules/Device.hpp>
 #include <luvk/Modules/Draw.hpp>
-#include <luvk/Modules/Synchronization.hpp>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_vulkan.h>
 
@@ -25,8 +24,6 @@ bool Application::Initialize()
     {
         volkLoadInstance(s_Instance->m_Renderer->GetInstance());
         volkLoadDevice(s_Instance->m_DeviceModule->GetLogicalDevice());
-
-        s_Instance->RegisterInputBindings();
         return true;
     }
 
@@ -35,10 +32,7 @@ bool Application::Initialize()
 
 void Application::Shutdown()
 {
-    m_DeviceModule->WaitIdle();
-    m_ImGuiLayer.reset();
     ApplicationBase::Shutdown();
-
     s_Instance.reset();
 }
 
@@ -55,48 +49,4 @@ std::shared_ptr<Application> Application::GetInstance()
     }
 
     return s_Instance;
-}
-
-void Application::PostRegisterImGuiLayer() const
-{
-    m_ImGuiLayer->PushStyle();
-
-    m_DrawModule->SetPreRenderCallback([this]([[maybe_unused]] const VkCommandBuffer Cmd)
-    {
-        m_ImGuiLayer->Draw();
-    });
-
-    m_DrawModule->SetDrawCallback([this](const VkCommandBuffer Cmd)
-    {
-        m_ImGuiLayer->Render(Cmd, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
-    });
-}
-
-void Application::RegisterInputBindings()
-{
-    m_Input->BindEvent(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED,
-                       [&]([[maybe_unused]] const SDL_Event& Event)
-                       {
-                           m_ResizePending = true;
-                       });
-
-    m_Input->BindEvent(SDL_EVENT_WINDOW_MINIMIZED,
-                       [&]([[maybe_unused]] const SDL_Event& Event)
-                       {
-                           m_Renderer->SetPaused(true);
-                           m_CanRender = false;
-                       });
-
-    m_Input->BindEvent(SDL_EVENT_WINDOW_RESTORED,
-                       [&]([[maybe_unused]] const SDL_Event& Event)
-                       {
-                           m_Renderer->SetPaused(false);
-                           m_CanRender = true;
-                       });
-
-    m_Input->BindEvent(SDL_EVENT_USER,
-                       [&](const SDL_Event& Event)
-                       {
-                           [[maybe_unused]] auto _ = m_ImGuiLayer && m_ImGuiLayer->ProcessEvent(Event);
-                       });
 }

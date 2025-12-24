@@ -62,6 +62,7 @@ bool ApplicationBase::Initialize()
         m_CanRender = true;
         volkLoadInstance(m_Renderer->GetInstance());
         volkLoadDevice(m_DeviceModule->GetLogicalDevice());
+        RegisterInputBindings();
         return true;
     }
 
@@ -70,6 +71,10 @@ bool ApplicationBase::Initialize()
 
 void ApplicationBase::Shutdown()
 {
+    m_DeviceModule->WaitIdle();
+
+    m_ImGuiLayer.reset();
+
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
 
@@ -131,6 +136,60 @@ void ApplicationBase::SetTitle(const std::string_view Title)
 {
     m_Title = Title;
     SDL_SetWindowTitle(m_Window, std::data(m_Title));
+}
+
+void ApplicationBase::PreRenderCallback([[maybe_unused]] const VkCommandBuffer CommandBuffer)
+{
+    m_ImGuiLayer->Draw();
+}
+
+void ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer)
+{
+    m_ImGuiLayer->Render(CommandBuffer, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
+}
+
+void ApplicationBase::PostRegisterImGuiLayer()
+{
+    m_ImGuiLayer->PushStyle();
+
+    m_DrawModule->SetPreRenderCallback([this](const VkCommandBuffer CommandBuffer)
+    {
+        PreRenderCallback(CommandBuffer);
+    });
+
+    m_DrawModule->SetDrawCallback([this](const VkCommandBuffer CommandBuffer)
+    {
+        DrawCallback(CommandBuffer);
+    });
+}
+
+void ApplicationBase::RegisterInputBindings()
+{
+    m_Input->BindEvent(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED,
+                       [&]([[maybe_unused]] const SDL_Event& Event)
+                       {
+                           m_ResizePending = true;
+                       });
+
+    m_Input->BindEvent(SDL_EVENT_WINDOW_MINIMIZED,
+                       [&]([[maybe_unused]] const SDL_Event& Event)
+                       {
+                           m_Renderer->SetPaused(true);
+                           m_CanRender = false;
+                       });
+
+    m_Input->BindEvent(SDL_EVENT_WINDOW_RESTORED,
+                       [&]([[maybe_unused]] const SDL_Event& Event)
+                       {
+                           m_Renderer->SetPaused(false);
+                           m_CanRender = true;
+                       });
+
+    m_Input->BindEvent(SDL_EVENT_USER,
+                       [&](const SDL_Event& Event)
+                       {
+                           [[maybe_unused]] auto _ = m_ImGuiLayer && m_ImGuiLayer->ProcessEvent(Event);
+                       });
 }
 
 void ApplicationBase::RegisterModules()
