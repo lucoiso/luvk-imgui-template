@@ -1,6 +1,6 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+// Repo: https://github.com/lucoiso/luvk_example
 
 #pragma once
 
@@ -108,15 +108,18 @@ namespace Core
         }
 
     protected:
-        virtual void PreRenderCallback(VkCommandBuffer CommandBuffer);
-        virtual void DrawCallback(VkCommandBuffer CommandBuffer);
-        virtual void UserEventCallback(const SDL_Event& Event);
+        virtual void                PreRenderCallback(VkCommandBuffer CommandBuffer);
+        virtual void                DrawCallback(VkCommandBuffer CommandBuffer, std::uint32_t CurrentFrame);
+        virtual void                UserEventCallback(const SDL_Event& Event);
+        virtual void                SetupInstanceExtensions() const;
+        [[nodiscard]] virtual void* GetInstanceFeatureChain() const;
+        virtual void                SetupDeviceExtensions() const;
+        [[nodiscard]] virtual void* GetDeviceFeatureChain() const;
 
     private:
-        void PostRegisterImGuiLayer();
-        void RegisterInputBindings();
+        void               PostRegisterImGuiLayer();
+        void               RegisterInputBindings();
         void               RegisterModules();
-        void               SetupExtensions() const;
         [[nodiscard]] bool InitializeModules() const;
         [[nodiscard]] bool InitializeDeviceModule() const;
     };

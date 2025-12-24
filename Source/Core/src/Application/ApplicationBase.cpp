@@ -1,6 +1,6 @@
 // Author: Lucas Vilas-Boas
 // Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+// Repo: https://github.com/lucoiso/luvk_example
 
 #include "Core/Application/ApplicationBase.hpp"
 #include <execution>
@@ -50,19 +50,20 @@ bool ApplicationBase::Initialize()
     volkInitialize();
 
     RegisterModules();
-    SetupExtensions();
+    SetupInstanceExtensions();
 
-    if (!m_Renderer->InitializeRenderer(g_InstArguments, nullptr))
+    if (!m_Renderer->InitializeRenderer(g_InstArguments, GetInstanceFeatureChain()))
     {
         return false;
     }
 
     if (InitializeModules())
     {
-        m_CanRender = true;
         volkLoadInstance(m_Renderer->GetInstance());
         volkLoadDevice(m_DeviceModule->GetLogicalDevice());
         RegisterInputBindings();
+        m_CanRender = true;
+
         return true;
     }
 
@@ -143,14 +144,45 @@ void ApplicationBase::PreRenderCallback([[maybe_unused]] const VkCommandBuffer C
     m_ImGuiLayer->Draw();
 }
 
-void ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer)
+void ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer, const std::uint32_t CurrentFrame)
 {
-    m_ImGuiLayer->Render(CommandBuffer, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
+    m_ImGuiLayer->Render(CommandBuffer, CurrentFrame);
 }
 
 void ApplicationBase::UserEventCallback(const SDL_Event& Event)
 {
     [[maybe_unused]] auto _ = m_ImGuiLayer && m_ImGuiLayer->ProcessEvent(Event);
+}
+
+void ApplicationBase::SetupInstanceExtensions() const
+{
+    std::uint32_t NumExtensions = 0U;
+
+    char const* const* RawExtensionsData = SDL_Vulkan_GetInstanceExtensions(&NumExtensions);
+
+    if (NumExtensions == 0 || RawExtensionsData == nullptr)
+    {
+        return;
+    }
+
+    std::vector ExtensionsData(RawExtensionsData, RawExtensionsData + NumExtensions);
+
+    for (char const* Ext : ExtensionsData)
+    {
+        m_Renderer->GetExtensions().SetExtensionState("", Ext, true);
+    }
+}
+
+void* ApplicationBase::GetInstanceFeatureChain() const
+{
+    return nullptr;
+}
+
+void ApplicationBase::SetupDeviceExtensions() const {}
+
+void* ApplicationBase::GetDeviceFeatureChain() const
+{
+    return nullptr;
 }
 
 void ApplicationBase::PostRegisterImGuiLayer()
@@ -164,34 +196,34 @@ void ApplicationBase::PostRegisterImGuiLayer()
 
     m_DrawModule->SetDrawCallback([this](const VkCommandBuffer CommandBuffer)
     {
-        DrawCallback(CommandBuffer);
+        DrawCallback(CommandBuffer, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
     });
 }
 
 void ApplicationBase::RegisterInputBindings()
 {
     m_Input->BindEvent(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED,
-                       [&]([[maybe_unused]] const SDL_Event& Event)
+                       [this]([[maybe_unused]] const SDL_Event& Event)
                        {
                            m_ResizePending = true;
                        });
 
     m_Input->BindEvent(SDL_EVENT_WINDOW_MINIMIZED,
-                       [&]([[maybe_unused]] const SDL_Event& Event)
+                       [this]([[maybe_unused]] const SDL_Event& Event)
                        {
                            m_Renderer->SetPaused(true);
                            m_CanRender = false;
                        });
 
     m_Input->BindEvent(SDL_EVENT_WINDOW_RESTORED,
-                       [&]([[maybe_unused]] const SDL_Event& Event)
+                       [this]([[maybe_unused]] const SDL_Event& Event)
                        {
                            m_Renderer->SetPaused(false);
                            m_CanRender = true;
                        });
 
     m_Input->BindEvent(SDL_EVENT_USER,
-                       [&](const SDL_Event& Event)
+                       [this](const SDL_Event& Event)
                        {
                            UserEventCallback(Event);
                        });
@@ -218,25 +250,6 @@ void ApplicationBase::RegisterModules()
                                  .ThreadPoolModule = m_ThreadPoolModule,
                                  .DescriptorPoolModule = m_DescriptorPoolModule,
                                  .DrawModule = m_DrawModule});
-}
-
-void ApplicationBase::SetupExtensions() const
-{
-    std::uint32_t NumExtensions = 0U;
-
-    char const* const* RawExtensionsData = SDL_Vulkan_GetInstanceExtensions(&NumExtensions);
-
-    if (NumExtensions == 0 || RawExtensionsData == nullptr)
-    {
-        return;
-    }
-
-    std::vector ExtensionsData(RawExtensionsData, RawExtensionsData + NumExtensions);
-
-    for (char const* Ext : ExtensionsData)
-    {
-        m_Renderer->GetExtensions().SetExtensionState("", Ext, true);
-    }
 }
 
 bool ApplicationBase::InitializeModules() const
@@ -281,6 +294,8 @@ bool ApplicationBase::InitializeDeviceModule() const
     m_DeviceModule->SetPhysicalDevice(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
     m_DeviceModule->SetSurface(Surface);
 
+    SetupDeviceExtensions();
+
     std::unordered_map<std::uint32_t, std::uint32_t> DeviceQueueMap{};
     const auto&                                      QueueProperties = m_DeviceModule->GetDeviceQueueFamilyProperties();
     std::uint32_t                                    Iterator        = 0U;
@@ -290,6 +305,6 @@ bool ApplicationBase::InitializeDeviceModule() const
         DeviceQueueMap.emplace(Iterator++, QueueIt.queueCount);
     }
 
-    m_DeviceModule->CreateLogicalDevice(std::move(DeviceQueueMap), nullptr);
+    m_DeviceModule->CreateLogicalDevice(std::move(DeviceQueueMap), GetDeviceFeatureChain());
     return true;
 }
