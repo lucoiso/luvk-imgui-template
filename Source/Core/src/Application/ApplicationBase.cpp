@@ -122,12 +122,8 @@ void ApplicationBase::SetTitle(const std::string_view Title) noexcept
 
 bool ApplicationBase::PreRenderCallback([[maybe_unused]] const VkCommandBuffer CommandBuffer)
 {
-    if (m_ImGuiLayer)
-    {
-        m_ImGuiLayer->Draw();
-        return true;
-    }
-    return false;
+    m_ImGuiLayer->Draw();
+    return true;
 }
 
 bool ApplicationBase::PostRenderCallback(VkCommandBuffer CommandBuffer)
@@ -137,12 +133,8 @@ bool ApplicationBase::PostRenderCallback(VkCommandBuffer CommandBuffer)
 
 bool ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer, const std::uint32_t CurrentFrame)
 {
-    if (m_ImGuiLayer)
-    {
-        m_ImGuiLayer->Render(CommandBuffer, CurrentFrame);
-        return true;
-    }
-    return false;
+    m_ImGuiLayer->Render(CommandBuffer, CurrentFrame);
+    return true;
 }
 
 void ApplicationBase::UserEventCallback(const SDL_Event& Event)
