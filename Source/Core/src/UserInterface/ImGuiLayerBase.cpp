@@ -4,15 +4,12 @@
 
 #include "Core/UserInterface/ImGuiLayerBase.hpp"
 #include <imgui.h>
+#include "luvk/Modules/Renderer.hpp"
 
 using namespace Core;
 
-ImGuiLayerBase::ImGuiLayerBase(SDL_Window*                                  Window,
-                               const VkInstance                             Instance,
-                               std::shared_ptr<luvk::Device> const&         Device,
-                               std::shared_ptr<luvk::DescriptorPool> const& Pool,
-                               std::shared_ptr<luvk::SwapChain> const&      Swap,
-                               std::shared_ptr<luvk::Memory> const&         Memory)
+ImGuiLayerBase::ImGuiLayerBase(SDL_Window*                            Window,
+                               std::shared_ptr<luvk::Renderer> const& Renderer)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -20,8 +17,14 @@ ImGuiLayerBase::ImGuiLayerBase(SDL_Window*                                  Wind
     ImGuiIO& IO    = ImGui::GetIO();
     IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable | ImGuiConfigFlags_NavEnableKeyboard;
 
+    const luvk::RenderModules& Modules = Renderer->GetModules();
+
     m_SdlBackend    = std::make_unique<ImGuiBackendSDL>(Window);
-    m_VulkanBackend = std::make_unique<ImGuiBackendVulkan>(Instance, Device, Pool, Swap, Memory);
+    m_VulkanBackend = std::make_unique<ImGuiBackendVulkan>(Renderer->GetInstance(),
+                                                           Modules.DeviceModule,
+                                                           Modules.DescriptorPoolModule,
+                                                           Modules.SwapChainModule,
+                                                           Modules.MemoryModule);
 }
 
 ImGuiLayerBase::~ImGuiLayerBase()

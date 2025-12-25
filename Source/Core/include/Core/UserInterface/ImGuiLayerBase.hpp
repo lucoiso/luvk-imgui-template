@@ -14,11 +14,7 @@ class SDL_Window;
 
 namespace luvk
 {
-    class Device;
-    class DescriptorPool;
-    class SwapChain;
-    class Memory;
-    class CommandBuffer;
+    class Renderer;
 } // namespace luvk
 
 namespace Core
@@ -31,12 +27,8 @@ namespace Core
 
     public:
         ImGuiLayerBase() = delete;
-        explicit ImGuiLayerBase(SDL_Window*                                  Window,
-                                VkInstance                                   Instance,
-                                std::shared_ptr<luvk::Device> const&         Device,
-                                std::shared_ptr<luvk::DescriptorPool> const& Pool,
-                                std::shared_ptr<luvk::SwapChain> const&      Swap,
-                                std::shared_ptr<luvk::Memory> const&         Memory);
+        explicit ImGuiLayerBase(SDL_Window*                            Window,
+                                std::shared_ptr<luvk::Renderer> const& Renderer);
         virtual ~ImGuiLayerBase();
 
         virtual void Draw();

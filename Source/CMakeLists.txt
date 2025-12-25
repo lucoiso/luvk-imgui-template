@@ -2,10 +2,6 @@
 # Year: 2025
 # Repo: https://github.com/lucoiso/luvk-imgui-template
 
-# Options
-# SET(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
-# SET(LUVK_INCLUDE_SLANG_COMPILER ON CACHE BOOL "" FORCE)
-
 # Sub-Directories
 ADD_SUBDIRECTORY(CMake)
 ADD_SUBDIRECTORY(luvk)

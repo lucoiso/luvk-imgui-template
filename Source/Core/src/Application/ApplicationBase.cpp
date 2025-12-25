@@ -44,8 +44,6 @@ ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t 
 
 bool ApplicationBase::Initialize()
 {
-    volkInitialize();
-
     RegisterModules();
     SetupInstanceExtensions();
 
@@ -56,8 +54,6 @@ bool ApplicationBase::Initialize()
 
     if (InitializeModules())
     {
-        volkLoadInstance(m_Renderer->GetInstance());
-        volkLoadDevice(m_DeviceModule->GetLogicalDevice());
         RegisterInputBindings();
         m_CanRender = true;
 
@@ -69,26 +65,14 @@ bool ApplicationBase::Initialize()
 
 void ApplicationBase::Shutdown()
 {
-    m_DeviceModule->WaitIdle();
+    const luvk::RenderModules& Modules = m_Renderer->GetModules();
+    Modules.DeviceModule->WaitIdle();
 
     m_ImGuiLayer.reset();
-
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
 
-    m_DebugModule.reset();
-    m_SwapChainModule.reset();
-    m_DeviceModule.reset();
-    m_MemoryModule.reset();
-    m_CommandPoolModule.reset();
-    m_SynchronizationModule.reset();
-    m_ThreadPoolModule.reset();
-    m_DescriptorPoolModule.reset();
-    m_DrawModule.reset();
-
     m_Renderer.reset();
-
-    volkFinalize();
 }
 
 bool ApplicationBase::Render()
@@ -130,20 +114,35 @@ bool ApplicationBase::Render()
     return true;
 }
 
-void ApplicationBase::SetTitle(const std::string_view Title)
+void ApplicationBase::SetTitle(const std::string_view Title) noexcept
 {
     m_Title = Title;
     SDL_SetWindowTitle(m_Window, std::data(m_Title));
 }
 
-void ApplicationBase::PreRenderCallback([[maybe_unused]] const VkCommandBuffer CommandBuffer)
+bool ApplicationBase::PreRenderCallback([[maybe_unused]] const VkCommandBuffer CommandBuffer)
 {
-    m_ImGuiLayer->Draw();
+    if (m_ImGuiLayer)
+    {
+        m_ImGuiLayer->Draw();
+        return true;
+    }
+    return false;
 }
 
-void ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer, const std::uint32_t CurrentFrame)
+bool ApplicationBase::PostRenderCallback(VkCommandBuffer CommandBuffer)
 {
-    m_ImGuiLayer->Render(CommandBuffer, CurrentFrame);
+    return false;
+}
+
+bool ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer, const std::uint32_t CurrentFrame)
+{
+    if (m_ImGuiLayer)
+    {
+        m_ImGuiLayer->Render(CommandBuffer, CurrentFrame);
+        return true;
+    }
+    return false;
 }
 
 void ApplicationBase::UserEventCallback(const SDL_Event& Event)
@@ -186,15 +185,17 @@ void ApplicationBase::PostRegisterImGuiLayer()
 {
     m_ImGuiLayer->PushStyle();
 
-    m_DrawModule->SetPreRenderCallback([this](const VkCommandBuffer CommandBuffer)
-    {
-        PreRenderCallback(CommandBuffer);
-    });
+    const luvk::RenderModules& Modules = m_Renderer->GetModules();
 
-    m_DrawModule->SetDrawCallback([this](const VkCommandBuffer CommandBuffer)
+    Modules.DrawModule->RegisterPreRenderCommand(luvk::DrawCallbackInfo([this](const VkCommandBuffer CommandBuffer)
     {
-        DrawCallback(CommandBuffer, static_cast<std::uint32_t>(m_SynchronizationModule->GetCurrentFrame()));
-    });
+        return PreRenderCallback(CommandBuffer);
+    }));
+
+    Modules.DrawModule->RegisterDrawCommand(luvk::DrawCallbackInfo([this](const VkCommandBuffer CommandBuffer)
+    {
+        return DrawCallback(CommandBuffer, m_Renderer->GetCurrentFrame());
+    }));
 }
 
 void ApplicationBase::RegisterInputBindings()
@@ -228,25 +229,25 @@ void ApplicationBase::RegisterInputBindings()
 
 void ApplicationBase::RegisterModules()
 {
-    m_DebugModule           = luvk::CreateModule<luvk::Debug>(m_Renderer);
-    m_DeviceModule          = luvk::CreateModule<luvk::Device>(m_Renderer);
-    m_MemoryModule          = luvk::CreateModule<luvk::Memory>(m_Renderer, m_DeviceModule);
-    m_SwapChainModule       = luvk::CreateModule<luvk::SwapChain>(m_DeviceModule, m_MemoryModule);
-    m_CommandPoolModule     = luvk::CreateModule<luvk::CommandPool>(m_DeviceModule);
-    m_SynchronizationModule = luvk::CreateModule<luvk::Synchronization>(m_DeviceModule, m_SwapChainModule, m_CommandPoolModule);
-    m_ThreadPoolModule      = luvk::CreateModule<luvk::ThreadPool>();
-    m_DescriptorPoolModule  = luvk::CreateModule<luvk::DescriptorPool>(m_DeviceModule);
-    m_DrawModule            = luvk::CreateModule<luvk::Draw>(m_DeviceModule, m_SwapChainModule, m_SynchronizationModule);
+    const auto DebugModule           = luvk::CreateModule<luvk::Debug>(m_Renderer);
+    const auto DeviceModule          = luvk::CreateModule<luvk::Device>(m_Renderer);
+    const auto MemoryModule          = luvk::CreateModule<luvk::Memory>(m_Renderer, DeviceModule);
+    const auto SwapChainModule       = luvk::CreateModule<luvk::SwapChain>(DeviceModule, MemoryModule);
+    const auto CommandPoolModule     = luvk::CreateModule<luvk::CommandPool>(DeviceModule);
+    const auto SynchronizationModule = luvk::CreateModule<luvk::Synchronization>(DeviceModule, SwapChainModule, CommandPoolModule);
+    const auto ThreadPoolModule      = luvk::CreateModule<luvk::ThreadPool>();
+    const auto DescriptorPoolModule  = luvk::CreateModule<luvk::DescriptorPool>(DeviceModule);
+    const auto DrawModule            = luvk::CreateModule<luvk::Draw>(DeviceModule, SwapChainModule, SynchronizationModule);
 
-    m_Renderer->RegisterModules({.DebugModule = m_DebugModule,
-                                 .DeviceModule = m_DeviceModule,
-                                 .MemoryModule = m_MemoryModule,
-                                 .SwapChainModule = m_SwapChainModule,
-                                 .CommandPoolModule = m_CommandPoolModule,
-                                 .SynchronizationModule = m_SynchronizationModule,
-                                 .ThreadPoolModule = m_ThreadPoolModule,
-                                 .DescriptorPoolModule = m_DescriptorPoolModule,
-                                 .DrawModule = m_DrawModule});
+    m_Renderer->RegisterModules({.DebugModule = DebugModule,
+                                 .DeviceModule = DeviceModule,
+                                 .MemoryModule = MemoryModule,
+                                 .SwapChainModule = SwapChainModule,
+                                 .CommandPoolModule = CommandPoolModule,
+                                 .SynchronizationModule = SynchronizationModule,
+                                 .ThreadPoolModule = ThreadPoolModule,
+                                 .DescriptorPoolModule = DescriptorPoolModule,
+                                 .DrawModule = DrawModule});
 }
 
 bool ApplicationBase::InitializeModules() const
@@ -256,26 +257,28 @@ bool ApplicationBase::InitializeModules() const
         return false;
     }
 
-    m_MemoryModule->InitializeAllocator(0);
+    const luvk::RenderModules& Modules = m_Renderer->GetModules();
 
-    m_SwapChainModule->CreateSwapChain({.PresentMode = VK_PRESENT_MODE_FIFO_KHR,
-                                        .Extent = {GetWidth(), GetHeight()},
-                                        .Surface = m_DeviceModule->GetSurface()},
-                                       nullptr);
+    Modules.MemoryModule->InitializeAllocator(0);
 
-    m_CommandPoolModule->CreateCommandPool(m_DeviceModule->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value(),
-                                           VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    Modules.SwapChainModule->CreateSwapChain({.PresentMode = VK_PRESENT_MODE_FIFO_KHR,
+                                              .Extent = {GetWidth(), GetHeight()},
+                                              .Surface = Modules.DeviceModule->GetSurface()},
+                                             nullptr);
 
-    m_ThreadPoolModule->Start(std::thread::hardware_concurrency());
+    Modules.CommandPoolModule->CreateCommandPool(Modules.DeviceModule->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value(),
+                                                 VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+    Modules.ThreadPoolModule->Start(std::thread::hardware_concurrency());
 
     constexpr std::array Sizes{VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
                                VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024},
                                VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024}};
 
-    m_DescriptorPoolModule->CreateDescriptorPool(1000, Sizes);
+    Modules.DescriptorPoolModule->CreateDescriptorPool(1000, Sizes);
 
-    m_SynchronizationModule->Initialize();
-    m_SynchronizationModule->SetupFrames();
+    Modules.SynchronizationModule->Initialize();
+    Modules.SynchronizationModule->SetupFrames();
 
     return true;
 }
@@ -288,13 +291,15 @@ bool ApplicationBase::InitializeDeviceModule() const
         return false;
     }
 
-    m_DeviceModule->SetPhysicalDevice(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    m_DeviceModule->SetSurface(Surface);
+    const luvk::RenderModules& Modules = m_Renderer->GetModules();
+
+    Modules.DeviceModule->SetPhysicalDevice(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    Modules.DeviceModule->SetSurface(Surface);
 
     SetupDeviceExtensions();
 
     std::unordered_map<std::uint32_t, std::uint32_t> DeviceQueueMap{};
-    const auto&                                      QueueProperties = m_DeviceModule->GetDeviceQueueFamilyProperties();
+    const auto&                                      QueueProperties = Modules.DeviceModule->GetDeviceQueueFamilyProperties();
     std::uint32_t                                    Iterator        = 0U;
 
     for (const auto& QueueIt : QueueProperties)
@@ -302,6 +307,6 @@ bool ApplicationBase::InitializeDeviceModule() const
         DeviceQueueMap.emplace(Iterator++, QueueIt.queueCount);
     }
 
-    m_DeviceModule->CreateLogicalDevice(std::move(DeviceQueueMap), GetDeviceFeatureChain());
+    Modules.DeviceModule->CreateLogicalDevice(std::move(DeviceQueueMap), GetDeviceFeatureChain());
     return true;
 }

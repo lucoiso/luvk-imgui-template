@@ -278,8 +278,6 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
 
             IO.AddMousePosEvent(MousePos.x, MousePos.y);
 
-            // Retornamos true apenas se o ImGui estiver de fato usando o mouse
-            // Isso permite que o SO processe interações na barra de título (Non-Client Area)
             return IO.WantCaptureMouse;
         }
     case SDL_EVENT_MOUSE_WHEEL:
@@ -325,18 +323,15 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
         }
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
         {
-            // ESSENCIAL: Tratar o fechamento de Viewports e da Janela Principal
             if (const SDL_Window* const Window = SDL_GetWindowFromID(Event.window.windowID))
             {
                 if (ImGuiViewport* const Viewport = ImGui::FindViewportByPlatformHandle(const_cast<SDL_Window*>(Window)))
                 {
-                    // Se for a janela principal, não consumimos o evento para que o app possa fechar
                     if (Viewport->PlatformHandle == static_cast<void*>(m_Window))
                     {
                         return false;
                     }
 
-                    // Se for uma janela secundária, avisamos o ImGui que ela deve fechar
                     Viewport->PlatformRequestClose = true;
                 }
             }

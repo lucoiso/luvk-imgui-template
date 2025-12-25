@@ -15,20 +15,6 @@ std::shared_ptr<Application> Application::s_Instance = nullptr;
 Application::Application(const std::uint32_t Width, const std::uint32_t Height)
     : ApplicationBase(Width, Height, SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN | SDL_WINDOW_TRANSPARENT | SDL_WINDOW_NOT_FOCUSABLE) {}
 
-bool Application::Initialize()
-{
-    volkInitialize();
-
-    if (ApplicationBase::Initialize())
-    {
-        volkLoadInstance(s_Instance->m_Renderer->GetInstance());
-        volkLoadDevice(s_Instance->m_DeviceModule->GetLogicalDevice());
-        return true;
-    }
-
-    return false;
-}
-
 void Application::Shutdown()
 {
     ApplicationBase::Shutdown();
@@ -39,12 +25,7 @@ std::shared_ptr<Application> Application::GetInstance()
 {
     if (!s_Instance)
     {
-        s_Instance = std::shared_ptr<Application>(new Application(4, 4),
-                                                  [](const Application* Instance)
-                                                  {
-                                                      delete Instance;
-                                                      volkFinalize();
-                                                  });
+        s_Instance = std::shared_ptr<Application>(new Application(4, 4));
     }
 
     return s_Instance;

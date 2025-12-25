@@ -19,8 +19,6 @@ namespace UserInterface
         ~Application() override = default;
 
         static std::shared_ptr<Application> GetInstance();
-
-        bool Initialize() override;
-        void Shutdown() override;
+        void                                Shutdown() override;
     };
 }
