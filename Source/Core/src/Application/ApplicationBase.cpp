@@ -21,10 +21,7 @@
 
 using namespace Core;
 
-constexpr luvk::Renderer::InstanceCreationArguments g_InstArguments{.ApplicationName = "LuVK Example",
-                                                                    .EngineName = "luvk",
-                                                                    .ApplicationVersion = VK_MAKE_VERSION(0U, 0U, 1U),
-                                                                    .EngineVersion = VK_MAKE_VERSION(0U, 0U, 1U)};
+constexpr luvk::Renderer::InstanceCreationArguments g_InstArguments{.ApplicationName = "luvk-imgui-template"};
 
 ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t Height, const SDL_WindowFlags Flags)
     : m_Width(static_cast<std::int32_t>(Width)),
