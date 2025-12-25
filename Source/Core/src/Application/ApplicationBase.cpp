@@ -21,7 +21,7 @@
 
 using namespace Core;
 
-constexpr luvk::Renderer::InstanceCreationArguments g_InstArguments{.ApplicationName = "luvk-imgui-template"};
+constexpr luvk::InstanceCreationArguments g_InstArguments{.ApplicationName = "luvk-imgui-template"};
 
 ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t Height, const SDL_WindowFlags Flags)
     : m_Width(static_cast<std::int32_t>(Width)),
