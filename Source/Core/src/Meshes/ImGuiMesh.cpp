@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "Core/Meshes/ImGuiMesh.hpp"
 #include <cstring>
@@ -96,11 +98,22 @@ ImGuiMesh::ImGuiMesh(const std::shared_ptr<luvk::Device>&         Device,
                                                        VK_SHADER_STAGE_FRAGMENT_BIT,
                                                        nullptr};
 
-    constexpr std::array Bindings{VkVertexInputBindingDescription{0, sizeof(ImDrawVert), VK_VERTEX_INPUT_RATE_VERTEX}};
+    constexpr std::array Bindings{VkVertexInputBindingDescription{0,
+                                                                  sizeof(ImDrawVert),
+                                                                  VK_VERTEX_INPUT_RATE_VERTEX}};
 
-    constexpr std::array Attributes{VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(ImDrawVert, pos)},
-                                    VkVertexInputAttributeDescription{1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(ImDrawVert, uv)},
-                                    VkVertexInputAttributeDescription{2, 0, VK_FORMAT_R8G8B8A8_UNORM, offsetof(ImDrawVert, col)}};
+    constexpr std::array Attributes{VkVertexInputAttributeDescription{0,
+                                                                      0,
+                                                                      VK_FORMAT_R32G32_SFLOAT,
+                                                                      offsetof(ImDrawVert, pos)},
+                                    VkVertexInputAttributeDescription{1,
+                                                                      0,
+                                                                      VK_FORMAT_R32G32_SFLOAT,
+                                                                      offsetof(ImDrawVert, uv)},
+                                    VkVertexInputAttributeDescription{2,
+                                                                      0,
+                                                                      VK_FORMAT_R8G8B8A8_UNORM,
+                                                                      offsetof(ImDrawVert, col)}};
 
     constexpr VkPushConstantRange PushConstantRange{VK_SHADER_STAGE_VERTEX_BIT,
                                                     0,
@@ -117,41 +130,45 @@ ImGuiMesh::ImGuiMesh(const std::shared_ptr<luvk::Device>&         Device,
     IO.Fonts->GetTexDataAsRGBA32(&Pixels, &Width, &Height);
 
     const auto Staging = std::make_shared<luvk::Buffer>(Device, Memory);
-    Staging->CreateBuffer({.Size = static_cast<VkDeviceSize>(Width * Height * 4),
-                           .Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    Staging->CreateBuffer({.Size        = static_cast<VkDeviceSize>(Width * Height * 4),
+                           .Usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                            .MemoryUsage = VMA_MEMORY_USAGE_CPU_TO_GPU,
-                           .Name = "ImGui Font Staging"});
-    Staging->Upload({reinterpret_cast<const std::byte*>(Pixels), static_cast<size_t>(Width * Height * 4)});
+                           .Name        = "ImGui Font Staging"});
+    Staging->Upload({reinterpret_cast<const std::byte*>(Pixels),
+                     static_cast<size_t>(Width * Height * 4)});
 
     auto FontImage = std::make_shared<luvk::Image>(Device, Memory);
-    FontImage->CreateImage({.Extent = {static_cast<uint32_t>(Width), static_cast<uint32_t>(Height), 1},
-                            .Format = VK_FORMAT_R8G8B8A8_UNORM,
-                            .Usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                            .Aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+    FontImage->CreateImage({.Extent = {static_cast<uint32_t>(Width),
+                                       static_cast<uint32_t>(Height),
+                                       1},
+                            .Format      = VK_FORMAT_R8G8B8A8_UNORM,
+                            .Usage       = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                            .Aspect      = VK_IMAGE_ASPECT_COLOR_BIT,
                             .MemoryUsage = VMA_MEMORY_USAGE_GPU_ONLY});
     FontImage->Upload(Staging);
 
     const auto FontSampler = std::make_shared<luvk::Sampler>(Device);
-    FontSampler->CreateSampler({.Filter = VK_FILTER_LINEAR, .AddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE});
+    FontSampler->CreateSampler({.Filter      = VK_FILTER_LINEAR,
+                                .AddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE});
 
     const auto FontTexture = std::make_shared<luvk::Texture>(FontImage, FontSampler);
     IO.Fonts->SetTexID(reinterpret_cast<ImTextureID>(FontSet->GetHandle()));
     FontSet->UpdateImage(FontImage->GetView(), FontSampler->GetHandle(), 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
     const auto FontPipeline = std::make_shared<luvk::Pipeline>(m_Device);
-    FontPipeline->CreateGraphicsPipeline({.Extent = Swap->GetExtent(),
-                                          .ColorFormats = std::array{Swap->GetCreationArguments().Format},
-                                          .RenderPass = Swap->GetRenderPass(),
-                                          .Subpass = 0,
-                                          .VertexShader = g_ImGuiVertexShader,
+    FontPipeline->CreateGraphicsPipeline({.Extent         = Swap->GetExtent(),
+                                          .ColorFormats   = std::array{Swap->GetCreationArguments().Format},
+                                          .RenderPass     = Swap->GetRenderPass(),
+                                          .Subpass        = 0,
+                                          .VertexShader   = g_ImGuiVertexShader,
                                           .FragmentShader = g_ImGuiFragmentShader,
-                                          .SetLayouts = std::array{FontSet->GetLayout()},
-                                          .Bindings = Bindings,
-                                          .Attributes = Attributes,
-                                          .PushConstants = std::array{PushConstantRange},
-                                          .Topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                                          .CullMode = VK_CULL_MODE_NONE,
-                                          .EnableDepthOp = false});
+                                          .SetLayouts     = std::array{FontSet->GetLayout()},
+                                          .Bindings       = Bindings,
+                                          .Attributes     = Attributes,
+                                          .PushConstants  = std::array{PushConstantRange},
+                                          .Topology       = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                          .CullMode       = VK_CULL_MODE_NONE,
+                                          .EnableDepthOp  = false});
 
     m_Material = std::make_shared<luvk::Material>();
     m_Material->SetPipeline(FontPipeline);
@@ -176,7 +193,16 @@ void ImGuiMesh::UpdateBuffers(const ImDrawData* const DrawData, const std::uint3
 
     m_ActiveDrawData = DrawData;
 
+    if (m_Vertices.size() < static_cast<size_t>(DrawData->TotalVtxCount))
+    {
+        m_Vertices.reserve(DrawData->TotalVtxCount * 2);
+    }
     m_Vertices.resize(DrawData->TotalVtxCount);
+
+    if (m_Indices.size() < static_cast<size_t>(DrawData->TotalIdxCount))
+    {
+        m_Indices.reserve(DrawData->TotalIdxCount * 2);
+    }
     m_Indices.resize(DrawData->TotalIdxCount);
 
     std::int32_t VtxOffset = 0;
@@ -185,13 +211,9 @@ void ImGuiMesh::UpdateBuffers(const ImDrawData* const DrawData, const std::uint3
     {
         const ImDrawList* CmdList = DrawData->CmdLists[ListIt];
 
-        std::memcpy(m_Vertices.data() + VtxOffset,
-                    CmdList->VtxBuffer.Data,
-                    CmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+        std::memcpy(m_Vertices.data() + VtxOffset, CmdList->VtxBuffer.Data, CmdList->VtxBuffer.Size * sizeof(ImDrawVert));
 
-        std::memcpy(m_Indices.data() + IdxOffset,
-                    CmdList->IdxBuffer.Data,
-                    CmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+        std::memcpy(m_Indices.data() + IdxOffset, CmdList->IdxBuffer.Data, CmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
 
         VtxOffset += CmdList->VtxBuffer.Size;
         IdxOffset += CmdList->IdxBuffer.Size;
@@ -242,10 +264,15 @@ void ImGuiMesh::Render(const VkCommandBuffer CommandBuffer, const std::uint32_t 
     constexpr VkDeviceSize Offset    = 0;
     vkCmdBindVertexBuffers(CommandBuffer, 0, 1, &VtxBuffer, &Offset);
 
-    const VkBuffer Idxuffer = m_IndexBuffers.at(CurrentFrame)->GetHandle();
-    vkCmdBindIndexBuffer(CommandBuffer, Idxuffer, 0, VK_INDEX_TYPE_UINT16);
+    const VkBuffer IdxBuffer = m_IndexBuffers.at(CurrentFrame)->GetHandle();
+    vkCmdBindIndexBuffer(CommandBuffer, IdxBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-    const VkViewport Viewport{0.F, 0.F, static_cast<float>(FbWidth), static_cast<float>(FbHeight), 0.F, 1.F};
+    const VkViewport Viewport{0.F,
+                              0.F,
+                              static_cast<float>(FbWidth),
+                              static_cast<float>(FbHeight),
+                              0.F,
+                              1.F};
     vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
 
     const ImVec2 ClipOff   = m_ActiveDrawData->DisplayPos;
@@ -265,11 +292,9 @@ void ImGuiMesh::Render(const VkCommandBuffer CommandBuffer, const std::uint32_t 
                 continue;
             }
 
-            ImVec2 ClipMin((CmdIt.ClipRect.x - ClipOff.x) * ClipScale.x,
-                           (CmdIt.ClipRect.y - ClipOff.y) * ClipScale.y);
+            ImVec2 ClipMin((CmdIt.ClipRect.x - ClipOff.x) * ClipScale.x, (CmdIt.ClipRect.y - ClipOff.y) * ClipScale.y);
 
-            ImVec2 ClipMax((CmdIt.ClipRect.z - ClipOff.x) * ClipScale.x,
-                           (CmdIt.ClipRect.w - ClipOff.y) * ClipScale.y);
+            ImVec2 ClipMax((CmdIt.ClipRect.z - ClipOff.x) * ClipScale.x, (CmdIt.ClipRect.w - ClipOff.y) * ClipScale.y);
 
             ClipMin.x = std::max(ClipMin.x, 0.F);
             ClipMin.y = std::max(ClipMin.y, 0.F);
@@ -281,20 +306,14 @@ void ImGuiMesh::Render(const VkCommandBuffer CommandBuffer, const std::uint32_t 
                 continue;
             }
 
-            VkRect2D Scissor{{static_cast<int32_t>(ClipMin.x), static_cast<int32_t>(ClipMin.y)},
+            VkRect2D Scissor{{static_cast<int32_t>(ClipMin.x),
+                              static_cast<int32_t>(ClipMin.y)},
                              {static_cast<uint32_t>(ClipMax.x - ClipMin.x),
                               static_cast<uint32_t>(ClipMax.y - ClipMin.y)}};
             vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
             const auto& DescSet = reinterpret_cast<VkDescriptorSet>(CmdIt.GetTexID());
-            vkCmdBindDescriptorSets(CommandBuffer,
-                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    PipelineLayout,
-                                    0,
-                                    1,
-                                    &DescSet,
-                                    0,
-                                    nullptr);
+            vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescSet, 0, nullptr);
 
             vkCmdDrawIndexed(CommandBuffer,
                              CmdIt.ElemCount,
@@ -308,6 +327,9 @@ void ImGuiMesh::Render(const VkCommandBuffer CommandBuffer, const std::uint32_t 
         GlobalVtxOffset += CmdList->VtxBuffer.Size;
     }
 
-    const VkRect2D FullScissor{{0, 0}, {static_cast<uint32_t>(FbWidth), static_cast<uint32_t>(FbHeight)}};
+    const VkRect2D FullScissor{{0,
+                                0},
+                               {static_cast<uint32_t>(FbWidth),
+                                static_cast<uint32_t>(FbHeight)}};
     vkCmdSetScissor(CommandBuffer, 0, 1, &FullScissor);
 }

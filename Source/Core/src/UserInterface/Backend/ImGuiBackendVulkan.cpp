@@ -1,15 +1,17 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "Core/UserInterface/Backend/ImGuiBackendVulkan.hpp"
 #include <luvk/Modules/CommandPool.hpp>
 #include <luvk/Modules/DescriptorPool.hpp>
 #include <luvk/Modules/Device.hpp>
+#include <luvk/Modules/Draw.hpp>
 #include <luvk/Modules/Memory.hpp>
 #include <luvk/Modules/SwapChain.hpp>
 #include <luvk/Modules/Synchronization.hpp>
-#include <luvk/Modules/Draw.hpp>
 #include "Core/Meshes/ImGuiMesh.hpp"
 
 #undef CreateWindow
@@ -89,7 +91,7 @@ void ImGuiBackendVulkan::CreateWindow(ImGuiViewport* const Viewport)
     Data->SwapChain   = luvk::CreateModule<luvk::SwapChain>(Device, Backend->GetMemory(), Data->Sync);
     Data->Draw        = luvk::CreateModule<luvk::Draw>(Device, Data->Sync);
 
-    Data->Draw->RegisterDrawCommand(luvk::DrawCallbackInfo{[Data, Viewport](const VkCommandBuffer CommandBuffer)
+    Data->Draw->RegisterOnRecordFrame(luvk::DrawCallbackInfo{[Data, Viewport](const VkCommandBuffer CommandBuffer)
     {
         if (Data && Viewport)
         {
@@ -102,11 +104,9 @@ void ImGuiBackendVulkan::CreateWindow(ImGuiViewport* const Viewport)
         return false;
     }});
 
-    Data->Mesh = std::make_shared<ImGuiMesh>(Device,
-                                             Backend->GetMemory(),
-                                             Backend->GetMesh()->GetMaterial());
+    Data->Mesh = std::make_shared<ImGuiMesh>(Device, Backend->GetMemory(), Backend->GetMesh()->GetMaterial());
 
-    Data->SwapChain->CreateSwapChain({.Extent = {.width = static_cast<std::uint32_t>(Viewport->Size.x),
+    Data->SwapChain->CreateSwapChain({.Extent = {.width  = static_cast<std::uint32_t>(Viewport->Size.x),
                                                  .height = static_cast<std::uint32_t>(Viewport->Size.y)},
                                       .Surface = Data->Surface},
                                      nullptr);
@@ -157,7 +157,9 @@ void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport* const Viewport, const ImVe
 
     Device->WaitQueue(GetGraphicsQueue(Device));
 
-    Data->SwapChain->Recreate({static_cast<uint32_t>(Size.x), static_cast<uint32_t>(Size.y)}, nullptr);
+    Data->SwapChain->Recreate({static_cast<uint32_t>(Size.x),
+                               static_cast<uint32_t>(Size.y)},
+                              nullptr);
     Data->Sync->ResetFrames();
 }
 

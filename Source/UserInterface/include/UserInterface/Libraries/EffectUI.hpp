@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #pragma once
 
@@ -25,10 +27,7 @@ namespace UserInterface::Effect
         float   m_Thickness;
 
     public:
-        explicit Scanline(const ImColor& Color     = ImColor(0, 0, 0, 255),
-                          float          Density   = 4.0F,
-                          float          Speed     = 10.0F,
-                          float          Thickness = 1.0F);
+        explicit Scanline(const ImColor& Color = ImColor(0, 0, 0, 255), float Density = 4.0F, float Speed = 10.0F, float Thickness = 1.0F);
         ~Scanline();
     };
 

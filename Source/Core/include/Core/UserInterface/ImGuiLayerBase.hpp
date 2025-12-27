@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #pragma once
 
@@ -15,7 +17,7 @@ class SDL_Window;
 namespace luvk
 {
     class Renderer;
-} // namespace luvk
+}
 
 namespace Core
 {
@@ -27,9 +29,8 @@ namespace Core
 
     public:
         ImGuiLayerBase() = delete;
-        explicit ImGuiLayerBase(SDL_Window*                            Window,
-                                std::shared_ptr<luvk::Renderer> const& Renderer);
-        virtual ~ImGuiLayerBase();
+        explicit ImGuiLayerBase(SDL_Window* Window, std::shared_ptr<luvk::Renderer> const& Renderer);
+        virtual  ~ImGuiLayerBase();
 
         virtual void Draw();
         virtual void PushStyle() const;
@@ -38,4 +39,4 @@ namespace Core
 
         [[nodiscard]] bool ProcessEvent(const SDL_Event& Event) const;
     };
-} // namespace Core
+}

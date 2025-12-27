@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "UserInterface/Libraries/EffectUI.hpp"
 #include <cmath>
@@ -44,7 +46,7 @@ Effect::Scanline::~Scanline()
 
     ImDrawList* DL = ImGui::GetForegroundDrawList();
 
-    const float Time   = static_cast<float>(ImGui::GetTime());
+    const auto Time    = static_cast<float>(ImGui::GetTime());
     const float Offset = std::fmod(Time * m_Speed, m_Density);
 
     const float Flicker = 0.7F + 0.3F * std::sin(Time * 25.0F);
@@ -57,10 +59,7 @@ Effect::Scanline::~Scanline()
 
     for (float It = Offset; It < Size.y; It += m_Density)
     {
-        DL->AddLine(ImVec2(Min.x, Min.y + It),
-                    ImVec2(Max.x, Min.y + It),
-                    FinalColor,
-                    m_Thickness);
+        DL->AddLine(ImVec2(Min.x, Min.y + It), ImVec2(Max.x, Min.y + It), FinalColor, m_Thickness);
     }
 
     DL->PopClipRect();
@@ -69,7 +68,7 @@ Effect::Scanline::~Scanline()
 Effect::Glitch::Glitch(const float Intensity)
     : m_Intensity(Intensity)
 {
-    const float Time = static_cast<float>(ImGui::GetTime());
+    const auto Time = static_cast<float>(ImGui::GetTime());
 
     const float OffsetX = std::sin(Time * 50.0F) * std::cos(Time * 20.0F) * m_Intensity;
     const float OffsetY = std::cos(Time * 30.0F) * m_Intensity;
@@ -96,7 +95,7 @@ Effect::Glow::~Glow()
     ImDrawList*  DL  = ImGui::GetWindowDrawList();
 
     ImColor ShadowColor = m_Color;
-    for (float It = 1.0F; It <= m_Radius; It += 1.0F)
+    for (float It = 1.0F; It <= m_Radius; ++It)
     {
         ShadowColor.Value.w = (m_Radius - It) / (m_Radius * 10.0F);
         DL->AddRect(ImVec2(Min.x - It, Min.y - It), ImVec2(Max.x + It, Max.y + It), ShadowColor, 0.0F, 0, 1.5F);

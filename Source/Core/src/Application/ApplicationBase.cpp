@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "Core/Application/ApplicationBase.hpp"
 #include <execution>
@@ -10,6 +12,7 @@
 #include <luvk/Modules/Debug.hpp>
 #include <luvk/Modules/DescriptorPool.hpp>
 #include <luvk/Modules/Device.hpp>
+#include <luvk/Modules/Draw.hpp>
 #include <luvk/Modules/Memory.hpp>
 #include <luvk/Modules/Renderer.hpp>
 #include <luvk/Modules/SwapChain.hpp>
@@ -17,11 +20,10 @@
 #include <luvk/Modules/ThreadPool.hpp>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_vulkan.h>
-#include "luvk/Modules/Draw.hpp"
 
 using namespace Core;
 
-constexpr luvk::InstanceCreationArguments g_InstArguments{.ApplicationName = "luvk-imgui-template"};
+constexpr luvk::InstanceCreationArguments g_InstArguments{.ApplicationName = "overlay-exp"};
 
 ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t Height, const SDL_WindowFlags Flags)
     : m_Width(static_cast<std::int32_t>(Width)),
@@ -31,12 +33,7 @@ ApplicationBase::ApplicationBase(const std::uint32_t Width, const std::uint32_t 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
     m_Title = g_InstArguments.ApplicationName;
-
-    m_Window = SDL_CreateWindow(std::data(m_Title),
-                                m_Width,
-                                m_Height,
-                                Flags);
-
+    m_Window = SDL_CreateWindow(std::data(m_Title), m_Width, m_Height, Flags);
     m_Input = std::make_shared<InputManager>(m_Window);
 
     SDL_StartTextInput(m_Window);
@@ -68,6 +65,8 @@ void ApplicationBase::Shutdown()
     const luvk::RenderModules& Modules = m_Renderer->GetModules();
     Modules.DeviceModule->WaitIdle();
 
+    m_EventHandles.clear();
+
     m_ImGuiLayer.reset();
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
@@ -95,7 +94,8 @@ bool ApplicationBase::Render()
     if (m_ResizePending && m_Width > 0 && m_Height > 0)
     {
         m_Renderer->SetPaused(true);
-        m_Renderer->Refresh({GetWidth(), GetHeight()});
+        m_Renderer->Refresh({GetWidth(),
+                             GetHeight()});
         m_Renderer->SetPaused(false);
         m_ResizePending = false;
         m_CanRender     = true;
@@ -120,18 +120,13 @@ void ApplicationBase::SetTitle(const std::string_view Title) noexcept
     SDL_SetWindowTitle(m_Window, std::data(m_Title));
 }
 
-bool ApplicationBase::PreRenderCallback([[maybe_unused]] const VkCommandBuffer CommandBuffer)
+bool ApplicationBase::OnBeginFrame([[maybe_unused]] const VkCommandBuffer CommandBuffer)
 {
     m_ImGuiLayer->Draw();
     return true;
 }
 
-bool ApplicationBase::PostRenderCallback(VkCommandBuffer CommandBuffer)
-{
-    return false;
-}
-
-bool ApplicationBase::DrawCallback(const VkCommandBuffer CommandBuffer, const std::uint32_t CurrentFrame)
+bool ApplicationBase::OnRecordFrame(const VkCommandBuffer CommandBuffer, const std::uint32_t CurrentFrame)
 {
     m_ImGuiLayer->Render(CommandBuffer, CurrentFrame);
     return true;
@@ -179,44 +174,53 @@ void ApplicationBase::PostRegisterImGuiLayer()
 
     const luvk::RenderModules& Modules = m_Renderer->GetModules();
 
-    Modules.DrawModule->RegisterPreRenderCommand(luvk::DrawCallbackInfo([this](const VkCommandBuffer CommandBuffer)
+    Modules.DrawModule->RegisterOnBeginFrame(luvk::DrawCallbackInfo([this](const VkCommandBuffer CommandBuffer)
     {
-        return PreRenderCallback(CommandBuffer);
+        return OnBeginFrame(CommandBuffer);
     }));
 
-    Modules.DrawModule->RegisterDrawCommand(luvk::DrawCallbackInfo([this](const VkCommandBuffer CommandBuffer)
+    Modules.DrawModule->RegisterOnRecordFrame(luvk::DrawCallbackInfo([this](const VkCommandBuffer CommandBuffer)
     {
-        return DrawCallback(CommandBuffer, m_Renderer->GetCurrentFrame());
+        return OnRecordFrame(CommandBuffer, m_Renderer->GetCurrentFrame());
     }));
 }
 
 void ApplicationBase::RegisterInputBindings()
 {
-    m_Input->BindEvent(SDL_EVENT_WINDOW_RESIZED,
-                       [this]([[maybe_unused]] const SDL_Event& Event)
-                       {
-                           m_ResizePending = true;
-                       });
+    m_EventHandles.emplace_back(m_Input->BindEvent(SDL_EVENT_WINDOW_RESIZED,
+                                                   [this]([[maybe_unused]] const SDL_Event& Event, SDL_Window* Window)
+                                                   {
+                                                       if (Window == m_Window)
+                                                       {
+                                                        m_ResizePending = true;
+                                                       }
+                                                   }));
 
-    m_Input->BindEvent(SDL_EVENT_WINDOW_MINIMIZED,
-                       [this]([[maybe_unused]] const SDL_Event& Event)
-                       {
-                           m_Renderer->SetPaused(true);
-                           m_CanRender = false;
-                       });
+    m_EventHandles.emplace_back(m_Input->BindEvent(SDL_EVENT_WINDOW_MINIMIZED,
+                                                   [this]([[maybe_unused]] const SDL_Event& Event, SDL_Window* Window)
+                                                   {
+                                                       if (Window == m_Window)
+                                                       {
+                                                           m_Renderer->SetPaused(true);
+                                                           m_CanRender = false;
+                                                       }
+                                                   }));
 
-    m_Input->BindEvent(SDL_EVENT_WINDOW_RESTORED,
-                       [this]([[maybe_unused]] const SDL_Event& Event)
-                       {
-                           m_Renderer->SetPaused(false);
-                           m_CanRender = true;
-                       });
+    m_EventHandles.emplace_back(m_Input->BindEvent(SDL_EVENT_WINDOW_RESTORED,
+                                                   [this]([[maybe_unused]] const SDL_Event& Event, SDL_Window* Window)
+                                                   {
+                                                       if (Window == m_Window)
+                                                       {
+                                                           m_Renderer->SetPaused(false);
+                                                           m_CanRender = true;
+                                                       }
+                                                   }));
 
-    m_Input->BindEvent(SDL_EVENT_USER,
-                       [this](const SDL_Event& Event)
-                       {
-                           UserEventCallback(Event);
-                       });
+    m_EventHandles.emplace_back(m_Input->BindEvent(SDL_EVENT_USER,
+                                                   [this](const SDL_Event& Event, [[maybe_unused]] SDL_Window* Window)
+                                                   {
+                                                       UserEventCallback(Event);
+                                                   }));
 }
 
 void ApplicationBase::RegisterModules()
@@ -231,15 +235,15 @@ void ApplicationBase::RegisterModules()
     const auto DescriptorPoolModule  = luvk::CreateModule<luvk::DescriptorPool>(DeviceModule);
     const auto DrawModule            = luvk::CreateModule<luvk::Draw>(DeviceModule, SynchronizationModule);
 
-    m_Renderer->RegisterModules({.DebugModule = DebugModule,
-                                 .DeviceModule = DeviceModule,
-                                 .MemoryModule = MemoryModule,
-                                 .SwapChainModule = SwapChainModule,
-                                 .CommandPoolModule = CommandPoolModule,
+    m_Renderer->RegisterModules({.DebugModule           = DebugModule,
+                                 .DeviceModule          = DeviceModule,
+                                 .MemoryModule          = MemoryModule,
+                                 .SwapChainModule       = SwapChainModule,
+                                 .CommandPoolModule     = CommandPoolModule,
                                  .SynchronizationModule = SynchronizationModule,
-                                 .ThreadPoolModule = ThreadPoolModule,
-                                 .DescriptorPoolModule = DescriptorPoolModule,
-                                 .DrawModule = DrawModule});
+                                 .ThreadPoolModule      = ThreadPoolModule,
+                                 .DescriptorPoolModule  = DescriptorPoolModule,
+                                 .DrawModule            = DrawModule});
 }
 
 bool ApplicationBase::InitializeModules() const
@@ -254,7 +258,8 @@ bool ApplicationBase::InitializeModules() const
     Modules.MemoryModule->InitializeAllocator(0);
 
     Modules.SwapChainModule->CreateSwapChain({.PresentMode = VK_PRESENT_MODE_FIFO_KHR,
-                                              .Extent = {GetWidth(), GetHeight()},
+                                              .Extent      = {GetWidth(),
+                                                              GetHeight()},
                                               .Surface = Modules.DeviceModule->GetSurface()},
                                              nullptr);
 
@@ -263,9 +268,12 @@ bool ApplicationBase::InitializeModules() const
 
     Modules.ThreadPoolModule->Start(std::thread::hardware_concurrency());
 
-    constexpr std::array Sizes{VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
-                               VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024},
-                               VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024}};
+    constexpr std::array Sizes{VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                    1024},
+                               VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                                    1024},
+                               VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                                    1024}};
 
     Modules.DescriptorPoolModule->CreateDescriptorPool(1000, Sizes);
     Modules.SynchronizationModule->Initialize(Modules.CommandPoolModule->AllocateRenderCommandBuffers());

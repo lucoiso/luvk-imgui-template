@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "Core/UserInterface/ImGuiLayerBase.hpp"
 #include <imgui.h>
@@ -8,8 +10,7 @@
 
 using namespace Core;
 
-ImGuiLayerBase::ImGuiLayerBase(SDL_Window*                            Window,
-                               std::shared_ptr<luvk::Renderer> const& Renderer)
+ImGuiLayerBase::ImGuiLayerBase(SDL_Window* Window, std::shared_ptr<luvk::Renderer> const& Renderer)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

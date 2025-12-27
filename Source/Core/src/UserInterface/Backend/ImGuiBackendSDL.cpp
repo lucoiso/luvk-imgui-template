@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "Core/UserInterface/Backend/ImGuiBackendSDL.hpp"
 #include <imgui.h>
@@ -18,24 +20,24 @@ static ImGuiKey SDLKeyToImGuiKey(const std::uint32_t Keycode, const SDL_Scancode
 {
     switch (Scancode)
     {
-    case SDL_SCANCODE_KP_0: return ImGuiKey_Keypad0;
-    case SDL_SCANCODE_KP_1: return ImGuiKey_Keypad1;
-    case SDL_SCANCODE_KP_2: return ImGuiKey_Keypad2;
-    case SDL_SCANCODE_KP_3: return ImGuiKey_Keypad3;
-    case SDL_SCANCODE_KP_4: return ImGuiKey_Keypad4;
-    case SDL_SCANCODE_KP_5: return ImGuiKey_Keypad5;
-    case SDL_SCANCODE_KP_6: return ImGuiKey_Keypad6;
-    case SDL_SCANCODE_KP_7: return ImGuiKey_Keypad7;
-    case SDL_SCANCODE_KP_8: return ImGuiKey_Keypad8;
-    case SDL_SCANCODE_KP_9: return ImGuiKey_Keypad9;
-    case SDL_SCANCODE_KP_PERIOD: return ImGuiKey_KeypadDecimal;
-    case SDL_SCANCODE_KP_DIVIDE: return ImGuiKey_KeypadDivide;
-    case SDL_SCANCODE_KP_MULTIPLY: return ImGuiKey_KeypadMultiply;
-    case SDL_SCANCODE_KP_MINUS: return ImGuiKey_KeypadSubtract;
-    case SDL_SCANCODE_KP_PLUS: return ImGuiKey_KeypadAdd;
-    case SDL_SCANCODE_KP_ENTER: return ImGuiKey_KeypadEnter;
-    case SDL_SCANCODE_KP_EQUALS: return ImGuiKey_KeypadEqual;
-    default:
+        case SDL_SCANCODE_KP_0: return ImGuiKey_Keypad0;
+        case SDL_SCANCODE_KP_1: return ImGuiKey_Keypad1;
+        case SDL_SCANCODE_KP_2: return ImGuiKey_Keypad2;
+        case SDL_SCANCODE_KP_3: return ImGuiKey_Keypad3;
+        case SDL_SCANCODE_KP_4: return ImGuiKey_Keypad4;
+        case SDL_SCANCODE_KP_5: return ImGuiKey_Keypad5;
+        case SDL_SCANCODE_KP_6: return ImGuiKey_Keypad6;
+        case SDL_SCANCODE_KP_7: return ImGuiKey_Keypad7;
+        case SDL_SCANCODE_KP_8: return ImGuiKey_Keypad8;
+        case SDL_SCANCODE_KP_9: return ImGuiKey_Keypad9;
+        case SDL_SCANCODE_KP_PERIOD: return ImGuiKey_KeypadDecimal;
+        case SDL_SCANCODE_KP_DIVIDE: return ImGuiKey_KeypadDivide;
+        case SDL_SCANCODE_KP_MULTIPLY: return ImGuiKey_KeypadMultiply;
+        case SDL_SCANCODE_KP_MINUS: return ImGuiKey_KeypadSubtract;
+        case SDL_SCANCODE_KP_PLUS: return ImGuiKey_KeypadAdd;
+        case SDL_SCANCODE_KP_ENTER: return ImGuiKey_KeypadEnter;
+        case SDL_SCANCODE_KP_EQUALS: return ImGuiKey_KeypadEqual;
+        default:
         {
             break;
         }
@@ -43,83 +45,83 @@ static ImGuiKey SDLKeyToImGuiKey(const std::uint32_t Keycode, const SDL_Scancode
 
     switch (Keycode)
     {
-    case SDLK_TAB: return ImGuiKey_Tab;
-    case SDLK_LEFT: return ImGuiKey_LeftArrow;
-    case SDLK_RIGHT: return ImGuiKey_RightArrow;
-    case SDLK_UP: return ImGuiKey_UpArrow;
-    case SDLK_DOWN: return ImGuiKey_DownArrow;
-    case SDLK_PAGEUP: return ImGuiKey_PageUp;
-    case SDLK_PAGEDOWN: return ImGuiKey_PageDown;
-    case SDLK_HOME: return ImGuiKey_Home;
-    case SDLK_END: return ImGuiKey_End;
-    case SDLK_INSERT: return ImGuiKey_Insert;
-    case SDLK_DELETE: return ImGuiKey_Delete;
-    case SDLK_BACKSPACE: return ImGuiKey_Backspace;
-    case SDLK_SPACE: return ImGuiKey_Space;
-    case SDLK_RETURN: return ImGuiKey_Enter;
-    case SDLK_ESCAPE: return ImGuiKey_Escape;
-    case SDLK_APOSTROPHE: return ImGuiKey_Apostrophe;
-    case SDLK_COMMA: return ImGuiKey_Comma;
-    case SDLK_MINUS: return ImGuiKey_Minus;
-    case SDLK_PERIOD: return ImGuiKey_Period;
-    case SDLK_SLASH: return ImGuiKey_Slash;
-    case SDLK_SEMICOLON: return ImGuiKey_Semicolon;
-    case SDLK_EQUALS: return ImGuiKey_Equal;
-    case SDLK_LEFTBRACKET: return ImGuiKey_LeftBracket;
-    case SDLK_BACKSLASH: return ImGuiKey_Backslash;
-    case SDLK_RIGHTBRACKET: return ImGuiKey_RightBracket;
-    case SDLK_GRAVE: return ImGuiKey_GraveAccent;
-    case SDLK_CAPSLOCK: return ImGuiKey_CapsLock;
-    case SDLK_SCROLLLOCK: return ImGuiKey_ScrollLock;
-    case SDLK_NUMLOCKCLEAR: return ImGuiKey_NumLock;
-    case SDLK_PRINTSCREEN: return ImGuiKey_PrintScreen;
-    case SDLK_PAUSE: return ImGuiKey_Pause;
-    case SDLK_LCTRL: return ImGuiKey_LeftCtrl;
-    case SDLK_LSHIFT: return ImGuiKey_LeftShift;
-    case SDLK_LALT: return ImGuiKey_LeftAlt;
-    case SDLK_LGUI: return ImGuiKey_LeftSuper;
-    case SDLK_RCTRL: return ImGuiKey_RightCtrl;
-    case SDLK_RSHIFT: return ImGuiKey_RightShift;
-    case SDLK_RALT: return ImGuiKey_RightAlt;
-    case SDLK_RGUI: return ImGuiKey_RightSuper;
-    case SDLK_APPLICATION: return ImGuiKey_Menu;
-    case SDLK_0: return ImGuiKey_0;
-    case SDLK_1: return ImGuiKey_1;
-    case SDLK_2: return ImGuiKey_2;
-    case SDLK_3: return ImGuiKey_3;
-    case SDLK_4: return ImGuiKey_4;
-    case SDLK_5: return ImGuiKey_5;
-    case SDLK_6: return ImGuiKey_6;
-    case SDLK_7: return ImGuiKey_7;
-    case SDLK_8: return ImGuiKey_8;
-    case SDLK_9: return ImGuiKey_9;
-    case SDLK_A: return ImGuiKey_A;
-    case SDLK_B: return ImGuiKey_B;
-    case SDLK_C: return ImGuiKey_C;
-    case SDLK_D: return ImGuiKey_D;
-    case SDLK_E: return ImGuiKey_E;
-    case SDLK_F: return ImGuiKey_F;
-    case SDLK_G: return ImGuiKey_G;
-    case SDLK_H: return ImGuiKey_H;
-    case SDLK_I: return ImGuiKey_I;
-    case SDLK_J: return ImGuiKey_J;
-    case SDLK_K: return ImGuiKey_K;
-    case SDLK_L: return ImGuiKey_L;
-    case SDLK_M: return ImGuiKey_M;
-    case SDLK_N: return ImGuiKey_N;
-    case SDLK_O: return ImGuiKey_O;
-    case SDLK_P: return ImGuiKey_P;
-    case SDLK_Q: return ImGuiKey_Q;
-    case SDLK_R: return ImGuiKey_R;
-    case SDLK_S: return ImGuiKey_S;
-    case SDLK_T: return ImGuiKey_T;
-    case SDLK_U: return ImGuiKey_U;
-    case SDLK_V: return ImGuiKey_V;
-    case SDLK_W: return ImGuiKey_W;
-    case SDLK_X: return ImGuiKey_X;
-    case SDLK_Y: return ImGuiKey_Y;
-    case SDLK_Z: return ImGuiKey_Z;
-    default:
+        case SDLK_TAB: return ImGuiKey_Tab;
+        case SDLK_LEFT: return ImGuiKey_LeftArrow;
+        case SDLK_RIGHT: return ImGuiKey_RightArrow;
+        case SDLK_UP: return ImGuiKey_UpArrow;
+        case SDLK_DOWN: return ImGuiKey_DownArrow;
+        case SDLK_PAGEUP: return ImGuiKey_PageUp;
+        case SDLK_PAGEDOWN: return ImGuiKey_PageDown;
+        case SDLK_HOME: return ImGuiKey_Home;
+        case SDLK_END: return ImGuiKey_End;
+        case SDLK_INSERT: return ImGuiKey_Insert;
+        case SDLK_DELETE: return ImGuiKey_Delete;
+        case SDLK_BACKSPACE: return ImGuiKey_Backspace;
+        case SDLK_SPACE: return ImGuiKey_Space;
+        case SDLK_RETURN: return ImGuiKey_Enter;
+        case SDLK_ESCAPE: return ImGuiKey_Escape;
+        case SDLK_APOSTROPHE: return ImGuiKey_Apostrophe;
+        case SDLK_COMMA: return ImGuiKey_Comma;
+        case SDLK_MINUS: return ImGuiKey_Minus;
+        case SDLK_PERIOD: return ImGuiKey_Period;
+        case SDLK_SLASH: return ImGuiKey_Slash;
+        case SDLK_SEMICOLON: return ImGuiKey_Semicolon;
+        case SDLK_EQUALS: return ImGuiKey_Equal;
+        case SDLK_LEFTBRACKET: return ImGuiKey_LeftBracket;
+        case SDLK_BACKSLASH: return ImGuiKey_Backslash;
+        case SDLK_RIGHTBRACKET: return ImGuiKey_RightBracket;
+        case SDLK_GRAVE: return ImGuiKey_GraveAccent;
+        case SDLK_CAPSLOCK: return ImGuiKey_CapsLock;
+        case SDLK_SCROLLLOCK: return ImGuiKey_ScrollLock;
+        case SDLK_NUMLOCKCLEAR: return ImGuiKey_NumLock;
+        case SDLK_PRINTSCREEN: return ImGuiKey_PrintScreen;
+        case SDLK_PAUSE: return ImGuiKey_Pause;
+        case SDLK_LCTRL: return ImGuiKey_LeftCtrl;
+        case SDLK_LSHIFT: return ImGuiKey_LeftShift;
+        case SDLK_LALT: return ImGuiKey_LeftAlt;
+        case SDLK_LGUI: return ImGuiKey_LeftSuper;
+        case SDLK_RCTRL: return ImGuiKey_RightCtrl;
+        case SDLK_RSHIFT: return ImGuiKey_RightShift;
+        case SDLK_RALT: return ImGuiKey_RightAlt;
+        case SDLK_RGUI: return ImGuiKey_RightSuper;
+        case SDLK_APPLICATION: return ImGuiKey_Menu;
+        case SDLK_0: return ImGuiKey_0;
+        case SDLK_1: return ImGuiKey_1;
+        case SDLK_2: return ImGuiKey_2;
+        case SDLK_3: return ImGuiKey_3;
+        case SDLK_4: return ImGuiKey_4;
+        case SDLK_5: return ImGuiKey_5;
+        case SDLK_6: return ImGuiKey_6;
+        case SDLK_7: return ImGuiKey_7;
+        case SDLK_8: return ImGuiKey_8;
+        case SDLK_9: return ImGuiKey_9;
+        case SDLK_A: return ImGuiKey_A;
+        case SDLK_B: return ImGuiKey_B;
+        case SDLK_C: return ImGuiKey_C;
+        case SDLK_D: return ImGuiKey_D;
+        case SDLK_E: return ImGuiKey_E;
+        case SDLK_F: return ImGuiKey_F;
+        case SDLK_G: return ImGuiKey_G;
+        case SDLK_H: return ImGuiKey_H;
+        case SDLK_I: return ImGuiKey_I;
+        case SDLK_J: return ImGuiKey_J;
+        case SDLK_K: return ImGuiKey_K;
+        case SDLK_L: return ImGuiKey_L;
+        case SDLK_M: return ImGuiKey_M;
+        case SDLK_N: return ImGuiKey_N;
+        case SDLK_O: return ImGuiKey_O;
+        case SDLK_P: return ImGuiKey_P;
+        case SDLK_Q: return ImGuiKey_Q;
+        case SDLK_R: return ImGuiKey_R;
+        case SDLK_S: return ImGuiKey_S;
+        case SDLK_T: return ImGuiKey_T;
+        case SDLK_U: return ImGuiKey_U;
+        case SDLK_V: return ImGuiKey_V;
+        case SDLK_W: return ImGuiKey_W;
+        case SDLK_X: return ImGuiKey_X;
+        case SDLK_Y: return ImGuiKey_Y;
+        case SDLK_Z: return ImGuiKey_Z;
+        default:
         {
             break;
         }
@@ -127,19 +129,19 @@ static ImGuiKey SDLKeyToImGuiKey(const std::uint32_t Keycode, const SDL_Scancode
 
     switch (Scancode)
     {
-    case SDL_SCANCODE_GRAVE: return ImGuiKey_GraveAccent;
-    case SDL_SCANCODE_MINUS: return ImGuiKey_Minus;
-    case SDL_SCANCODE_EQUALS: return ImGuiKey_Equal;
-    case SDL_SCANCODE_LEFTBRACKET: return ImGuiKey_LeftBracket;
-    case SDL_SCANCODE_RIGHTBRACKET: return ImGuiKey_RightBracket;
-    case SDL_SCANCODE_NONUSBACKSLASH: return ImGuiKey_Oem102;
-    case SDL_SCANCODE_BACKSLASH: return ImGuiKey_Backslash;
-    case SDL_SCANCODE_SEMICOLON: return ImGuiKey_Semicolon;
-    case SDL_SCANCODE_APOSTROPHE: return ImGuiKey_Apostrophe;
-    case SDL_SCANCODE_COMMA: return ImGuiKey_Comma;
-    case SDL_SCANCODE_PERIOD: return ImGuiKey_Period;
-    case SDL_SCANCODE_SLASH: return ImGuiKey_Slash;
-    default:
+        case SDL_SCANCODE_GRAVE: return ImGuiKey_GraveAccent;
+        case SDL_SCANCODE_MINUS: return ImGuiKey_Minus;
+        case SDL_SCANCODE_EQUALS: return ImGuiKey_Equal;
+        case SDL_SCANCODE_LEFTBRACKET: return ImGuiKey_LeftBracket;
+        case SDL_SCANCODE_RIGHTBRACKET: return ImGuiKey_RightBracket;
+        case SDL_SCANCODE_NONUSBACKSLASH: return ImGuiKey_Oem102;
+        case SDL_SCANCODE_BACKSLASH: return ImGuiKey_Backslash;
+        case SDL_SCANCODE_SEMICOLON: return ImGuiKey_Semicolon;
+        case SDL_SCANCODE_APOSTROPHE: return ImGuiKey_Apostrophe;
+        case SDL_SCANCODE_COMMA: return ImGuiKey_Comma;
+        case SDL_SCANCODE_PERIOD: return ImGuiKey_Period;
+        case SDL_SCANCODE_SLASH: return ImGuiKey_Slash;
+        default:
         {
             break;
         }
@@ -247,9 +249,7 @@ void ImGuiBackendSDL::NewFrame() const
         }
         else
         {
-            SDL_Cursor* const NewCursor = m_MouseCursors.at(CursorType)
-                                              ? m_MouseCursors.at(CursorType)
-                                              : m_MouseCursors.at(ImGuiMouseCursor_Arrow);
+            SDL_Cursor* const NewCursor = m_MouseCursors.at(CursorType) ? m_MouseCursors.at(CursorType) : m_MouseCursors.at(ImGuiMouseCursor_Arrow);
 
             SDL_SetCursor(NewCursor);
             SDL_ShowCursor();
@@ -263,7 +263,7 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
 
     switch (Event.type)
     {
-    case SDL_EVENT_MOUSE_MOTION:
+        case SDL_EVENT_MOUSE_MOTION:
         {
             ImVec2 MousePos(Event.motion.x, Event.motion.y);
 
@@ -280,13 +280,13 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
 
             return IO.WantCaptureMouse;
         }
-    case SDL_EVENT_MOUSE_WHEEL:
+        case SDL_EVENT_MOUSE_WHEEL:
         {
             IO.AddMouseWheelEvent(Event.wheel.x, Event.wheel.y);
             return IO.WantCaptureMouse;
         }
-    case SDL_EVENT_MOUSE_BUTTON_DOWN:
-    case SDL_EVENT_MOUSE_BUTTON_UP:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
         {
             std::int32_t Button = -1;
             if (Event.button.button == SDL_BUTTON_LEFT)
@@ -321,7 +321,7 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
             }
             return IO.WantCaptureMouse;
         }
-    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
         {
             if (const SDL_Window* const Window = SDL_GetWindowFromID(Event.window.windowID))
             {
@@ -337,28 +337,26 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
             }
             return true;
         }
-    case SDL_EVENT_WINDOW_MOUSE_ENTER:
-    case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+        case SDL_EVENT_WINDOW_MOUSE_ENTER:
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE:
         {
             if (const SDL_Window* const Window = SDL_GetWindowFromID(Event.window.windowID))
             {
                 if (const ImGuiViewport* const Viewport = ImGui::FindViewportByPlatformHandle(const_cast<SDL_Window*>(Window)))
                 {
-                    IO.AddMouseViewportEvent(Event.type == SDL_EVENT_WINDOW_MOUSE_ENTER
-                                                 ? Viewport->ID
-                                                 : 0);
+                    IO.AddMouseViewportEvent(Event.type == SDL_EVENT_WINDOW_MOUSE_ENTER ? Viewport->ID : 0);
                 }
             }
             return true;
         }
-    case SDL_EVENT_WINDOW_FOCUS_GAINED:
-    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
         {
             IO.AddFocusEvent(Event.type == SDL_EVENT_WINDOW_FOCUS_GAINED);
             return true;
         }
-    case SDL_EVENT_KEY_DOWN:
-    case SDL_EVENT_KEY_UP:
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP:
         {
             IO.AddKeyEvent(ImGuiMod_Ctrl, (Event.key.mod & SDL_KMOD_CTRL) != 0);
             IO.AddKeyEvent(ImGuiMod_Shift, (Event.key.mod & SDL_KMOD_SHIFT) != 0);
@@ -370,16 +368,16 @@ bool ImGuiBackendSDL::ProcessEvent(const SDL_Event& Event) const
 
             return IO.WantCaptureKeyboard;
         }
-    case SDL_EVENT_DISPLAY_ORIENTATION:
-    case SDL_EVENT_DISPLAY_ADDED:
-    case SDL_EVENT_DISPLAY_REMOVED:
-    case SDL_EVENT_DISPLAY_MOVED:
-    case SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED:
+        case SDL_EVENT_DISPLAY_ORIENTATION:
+        case SDL_EVENT_DISPLAY_ADDED:
+        case SDL_EVENT_DISPLAY_REMOVED:
+        case SDL_EVENT_DISPLAY_MOVED:
+        case SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED:
         {
             UpdateMonitors();
             return true;
         }
-    default:
+        default:
         {
             break;
         }
@@ -440,9 +438,7 @@ void ImGuiBackendSDL::CreateWindow(ImGuiViewport* const Viewport)
                                                                    static_cast<int>(Viewport->Size.y),
                                                                    WindowFlags));
 
-    SDL_SetWindowPosition(static_cast<SDL_Window*>(Viewport->PlatformHandle),
-                          static_cast<int>(Viewport->Pos.x),
-                          static_cast<int>(Viewport->Pos.y));
+    SDL_SetWindowPosition(static_cast<SDL_Window*>(Viewport->PlatformHandle), static_cast<int>(Viewport->Pos.x), static_cast<int>(Viewport->Pos.y));
 }
 
 void ImGuiBackendSDL::DestroyWindow(ImGuiViewport* const Viewport)
@@ -464,14 +460,13 @@ ImVec2 ImGuiBackendSDL::GetWindowPos(ImGuiViewport* const Viewport)
     std::int32_t PosX = 0;
     std::int32_t PosY = 0;
     SDL_GetWindowPosition(static_cast<SDL_Window*>(Viewport->PlatformHandle), &PosX, &PosY);
-    return {static_cast<float>(PosX), static_cast<float>(PosY)};
+    return {static_cast<float>(PosX),
+            static_cast<float>(PosY)};
 }
 
 void ImGuiBackendSDL::SetWindowPos(ImGuiViewport* const Viewport, const ImVec2 Pos)
 {
-    SDL_SetWindowPosition(static_cast<SDL_Window*>(Viewport->PlatformHandle),
-                          static_cast<int>(Pos.x),
-                          static_cast<int>(Pos.y));
+    SDL_SetWindowPosition(static_cast<SDL_Window*>(Viewport->PlatformHandle), static_cast<int>(Pos.x), static_cast<int>(Pos.y));
 }
 
 ImVec2 ImGuiBackendSDL::GetWindowSize(ImGuiViewport* const Viewport)
@@ -479,14 +474,13 @@ ImVec2 ImGuiBackendSDL::GetWindowSize(ImGuiViewport* const Viewport)
     std::int32_t Width  = 0;
     std::int32_t Height = 0;
     SDL_GetWindowSize(static_cast<SDL_Window*>(Viewport->PlatformHandle), &Width, &Height);
-    return {static_cast<float>(Width), static_cast<float>(Height)};
+    return {static_cast<float>(Width),
+            static_cast<float>(Height)};
 }
 
 void ImGuiBackendSDL::SetWindowSize(ImGuiViewport* const Viewport, const ImVec2 Size)
 {
-    SDL_SetWindowSize(static_cast<SDL_Window*>(Viewport->PlatformHandle),
-                      static_cast<int>(Size.x),
-                      static_cast<int>(Size.y));
+    SDL_SetWindowSize(static_cast<SDL_Window*>(Viewport->PlatformHandle), static_cast<int>(Size.x), static_cast<int>(Size.y));
 }
 
 void ImGuiBackendSDL::SetWindowTitle(ImGuiViewport* const Viewport, const char* Title)
@@ -521,8 +515,5 @@ int ImGuiBackendSDL::CreateVkSurface(ImGuiViewport* const Viewport, const ImU64 
     const auto AllocationCallbacks = static_cast<const VkAllocationCallbacks*>(Allocator);
     const auto SurfaceHandle       = reinterpret_cast<VkSurfaceKHR*>(OutSurface);
 
-    return SDL_Vulkan_CreateSurface(WindowHandle,
-                                    InstanceHandle,
-                                    AllocationCallbacks,
-                                    SurfaceHandle);
+    return SDL_Vulkan_CreateSurface(WindowHandle, InstanceHandle, AllocationCallbacks, SurfaceHandle);
 }

@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "UserInterface/Libraries/ControlUI.hpp"
 #include "UserInterface/Libraries/ThemeUI.hpp"
@@ -17,7 +19,7 @@ void Control::Checkbox(const char* Label, bool* State)
     ImGui::Checkbox(Label, State);
 }
 
-void Control::Slider(const char* Label, float* Value, float Min, float Max)
+void Control::Slider(const char* Label, float* Value, const float Min, const float Max)
 {
     ImGui::SliderFloat(Label, Value, Min, Max);
 }
@@ -38,19 +40,20 @@ bool Control::Toggle(const char* Label, bool* State)
     const bool Pressed = ImGui::InvisibleButton(Label, ClickArea);
     if (Pressed && State)
     {
-        *State = !(*State);
+        *State = !*State;
     }
 
     ImDrawList* DL = ImGui::GetWindowDrawList();
 
-    const ImColor Color = *State
-                              ? Theme::Colors::BrightRed
-                              : ImColor(50, 50, 50);
+    ImColor Color(50.F, 50.F, 50.F);
+    if (State && *State)
+    {
+        Color = Theme::Colors::BrightRed;
+    }
+
     DL->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + Height), Color, Radius);
 
-    const float CirclePos = *State
-                                ? (Pos.x + Width - Radius)
-                                : (Pos.x + Radius);
+    const float CirclePos = *State ? Pos.x + Width - Radius : Pos.x + Radius;
     DL->AddCircleFilled(ImVec2(CirclePos, Pos.y + Radius), Radius - 2.0F, ImColor(255, 255, 255));
 
     ImGui::SameLine();

@@ -1,11 +1,14 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #pragma once
 
 #include <memory>
 #include <string>
+#include <vector>
 #include <luvk/Modules/Renderer.hpp>
 #include "Core/Components/InputManager.hpp"
 #include "Core/UserInterface/ImGuiLayerBase.hpp"
@@ -23,7 +26,7 @@ namespace luvk
     class ThreadPool;
     class DescriptorPool;
     class Draw;
-} // namespace luvk
+}
 
 namespace Core
 {
@@ -42,6 +45,7 @@ namespace Core
         std::shared_ptr<InputManager>   m_Input;
         std::unique_ptr<ImGuiLayerBase> m_ImGuiLayer;
         std::shared_ptr<luvk::Renderer> m_Renderer{};
+        std::vector<EventHandle>        m_EventHandles{};
 
     public:
         explicit ApplicationBase(std::uint32_t Width, std::uint32_t Height, SDL_WindowFlags Flags);
@@ -55,9 +59,7 @@ namespace Core
         template <typename ImGuiLayerType, typename... Args> requires std::is_base_of_v<Core::ImGuiLayerBase, ImGuiLayerType>
         void RegisterImGuiLayer(Args&&... InArguments)
         {
-            m_ImGuiLayer = std::make_unique<ImGuiLayerType>(m_Window,
-                                                            m_Renderer,
-                                                            std::forward<Args>(InArguments)...);
+            m_ImGuiLayer = std::make_unique<ImGuiLayerType>(m_Window, m_Renderer, std::forward<Args>(InArguments)...);
             PostRegisterImGuiLayer();
         }
 
@@ -94,9 +96,8 @@ namespace Core
         }
 
     protected:
-        virtual bool                PreRenderCallback(VkCommandBuffer CommandBuffer);
-        virtual bool                PostRenderCallback(VkCommandBuffer CommandBuffer);
-        virtual bool                DrawCallback(VkCommandBuffer CommandBuffer, std::uint32_t CurrentFrame);
+        virtual bool                OnBeginFrame(VkCommandBuffer CommandBuffer);
+        virtual bool                OnRecordFrame(VkCommandBuffer CommandBuffer, std::uint32_t CurrentFrame);
         virtual void                UserEventCallback(const SDL_Event& Event);
         virtual void                SetupInstanceExtensions() const;
         [[nodiscard]] virtual void* GetInstanceFeatureChain() const;
@@ -110,4 +111,4 @@ namespace Core
         [[nodiscard]] bool InitializeModules() const;
         [[nodiscard]] bool InitializeDeviceModule() const;
     };
-} // namespace Core
+}

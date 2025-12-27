@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "UserInterface/Libraries/AnimationUI.hpp"
 #include <cmath>
@@ -30,7 +32,5 @@ Animation::FlickerAnimation::FlickerAnimation(const float Frequency)
 float Animation::FlickerAnimation::GetValue() const
 {
     const float Time = static_cast<float>(ImGui::GetTime());
-    return (std::sin(Time * m_Frequency) > 0.0F)
-               ? 1.0F
-               : 0.2F;
+    return (std::sin(Time * m_Frequency) > 0.0F) ? 1.0F : 0.2F;
 }

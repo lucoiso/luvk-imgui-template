@@ -1,6 +1,8 @@
-// Author: Lucas Vilas-Boas
-// Year: 2025
-// Repo: https://github.com/lucoiso/luvk-imgui-template
+/*
+ * Author: Lucas Vilas-Boas
+ * Year: 2025
+ * Repo: https://github.com/lucoiso/luvk-imgui-template
+ */
 
 #include "UserInterface/Layers/AppUI.hpp"
 #include <SDL3/SDL.h>
@@ -70,7 +72,7 @@ bool AppUI::Draw()
         const Animation::PulseAnimation Pulse(3.0F);
 
         ImColor BarColor = Theme::Colors::Cyan;
-        BarColor.Value.w = 0.4F + (0.6F * Pulse.GetValue());
+        BarColor.Value.w = 0.4F + 0.6F * Pulse.GetValue();
 
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, static_cast<ImVec4>(BarColor));
         Control::ProgressBar(Progress, "SYNCING_DATA...");
@@ -111,7 +113,7 @@ bool AppUI::Draw()
         }
 
         {
-            Effect::Glitch HeavyGlitch(3.0F);
+            [[maybe_unused]] Effect::Glitch HeavyGlitch(3.0F);
             Data::Text("DATA_STREAM_01: STABLE", Data::TextType::Footer, Theme::Colors::Cyan);
         }
     });
