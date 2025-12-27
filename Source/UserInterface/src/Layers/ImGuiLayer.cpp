@@ -11,7 +11,12 @@ using namespace UserInterface;
 void ImGuiLayer::Draw()
 {
     ImGuiLayerBase::Draw();
-    AppUI::Draw();
+
+    if (!AppUI::Draw())
+    {
+        SDL_Event QuitEvent{.type = SDL_EVENT_QUIT};
+        SDL_PushEvent(&QuitEvent);
+    }
 }
 
 void ImGuiLayer::PushStyle() const

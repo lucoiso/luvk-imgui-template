@@ -6,5 +6,5 @@
 
 namespace UserInterface::AppUI
 {
-    USERINTERFACE_API void Draw();
+    USERINTERFACE_API bool Draw();
 }

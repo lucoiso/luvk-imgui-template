@@ -14,6 +14,7 @@ namespace luvk
     class Device;
     class Memory;
     class SwapChain;
+    class Draw;
     class CommandPool;
     class Synchronization;
     class DescriptorSet;
@@ -28,11 +29,12 @@ namespace Core
 
     struct CORE_API ViewportData
     {
-        std::uint32_t                          ImageIndex{0U};
+        std::int32_t                           ImageIndex{-1};
         VkSurfaceKHR                           Surface{VK_NULL_HANDLE};
         std::shared_ptr<luvk::SwapChain>       SwapChain{nullptr};
         std::shared_ptr<luvk::CommandPool>     CommandPool{nullptr};
         std::shared_ptr<luvk::Synchronization> Sync{nullptr};
+        std::shared_ptr<luvk::Draw>            Draw{nullptr};
         std::shared_ptr<ImGuiMesh>             Mesh{nullptr};
     };
 
@@ -46,7 +48,7 @@ namespace Core
 
     public:
         ImGuiBackendVulkan() = delete;
-        explicit ImGuiBackendVulkan(const VkInstance                             Instance,
+        explicit ImGuiBackendVulkan(VkInstance                                   Instance,
                                     const std::shared_ptr<luvk::Device>&         Device,
                                     const std::shared_ptr<luvk::DescriptorPool>& Pool,
                                     const std::shared_ptr<luvk::SwapChain>&      Swap,

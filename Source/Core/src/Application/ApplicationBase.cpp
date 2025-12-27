@@ -72,7 +72,7 @@ void ApplicationBase::Shutdown()
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
 
-    m_Renderer.reset();
+    m_Renderer->ClearResources();
 }
 
 bool ApplicationBase::Render()
@@ -192,7 +192,7 @@ void ApplicationBase::PostRegisterImGuiLayer()
 
 void ApplicationBase::RegisterInputBindings()
 {
-    m_Input->BindEvent(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED,
+    m_Input->BindEvent(SDL_EVENT_WINDOW_RESIZED,
                        [this]([[maybe_unused]] const SDL_Event& Event)
                        {
                            m_ResizePending = true;
@@ -224,12 +224,12 @@ void ApplicationBase::RegisterModules()
     const auto DebugModule           = luvk::CreateModule<luvk::Debug>(m_Renderer);
     const auto DeviceModule          = luvk::CreateModule<luvk::Device>(m_Renderer);
     const auto MemoryModule          = luvk::CreateModule<luvk::Memory>(m_Renderer, DeviceModule);
-    const auto SwapChainModule       = luvk::CreateModule<luvk::SwapChain>(DeviceModule, MemoryModule);
     const auto CommandPoolModule     = luvk::CreateModule<luvk::CommandPool>(DeviceModule);
-    const auto SynchronizationModule = luvk::CreateModule<luvk::Synchronization>(DeviceModule, SwapChainModule, CommandPoolModule);
+    const auto SynchronizationModule = luvk::CreateModule<luvk::Synchronization>(DeviceModule);
+    const auto SwapChainModule       = luvk::CreateModule<luvk::SwapChain>(DeviceModule, MemoryModule, SynchronizationModule);
     const auto ThreadPoolModule      = luvk::CreateModule<luvk::ThreadPool>();
     const auto DescriptorPoolModule  = luvk::CreateModule<luvk::DescriptorPool>(DeviceModule);
-    const auto DrawModule            = luvk::CreateModule<luvk::Draw>(DeviceModule, SwapChainModule, SynchronizationModule);
+    const auto DrawModule            = luvk::CreateModule<luvk::Draw>(DeviceModule, SynchronizationModule);
 
     m_Renderer->RegisterModules({.DebugModule = DebugModule,
                                  .DeviceModule = DeviceModule,
@@ -268,9 +268,7 @@ bool ApplicationBase::InitializeModules() const
                                VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024}};
 
     Modules.DescriptorPoolModule->CreateDescriptorPool(1000, Sizes);
-
-    Modules.SynchronizationModule->Initialize();
-    Modules.SynchronizationModule->SetupFrames();
+    Modules.SynchronizationModule->Initialize(Modules.CommandPoolModule->AllocateRenderCommandBuffers());
 
     return true;
 }

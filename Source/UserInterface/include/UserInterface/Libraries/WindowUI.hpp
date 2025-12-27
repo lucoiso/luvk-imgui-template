@@ -5,8 +5,20 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 namespace UserInterface::Window
 {
-    USERINTERFACE_API void Overlay(std::function<void()>&& Header, std::function<void()>&& Content, std::function<void()>&& Footer = {});
+    class USERINTERFACE_API Overlay
+    {
+        bool*                              m_State;
+        const char*                        m_Name;
+        std::vector<std::function<void()>> m_Content;
+
+    public:
+        explicit Overlay(const char* Name, bool* State);
+        ~Overlay();
+
+        void AddContent(std::function<void()>&& Function);
+    };
 }

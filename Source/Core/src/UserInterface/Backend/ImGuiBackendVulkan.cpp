@@ -9,15 +9,18 @@
 #include <luvk/Modules/Memory.hpp>
 #include <luvk/Modules/SwapChain.hpp>
 #include <luvk/Modules/Synchronization.hpp>
+#include <luvk/Modules/Draw.hpp>
 #include "Core/Meshes/ImGuiMesh.hpp"
 
 #undef CreateWindow
 
 using namespace Core;
 
-// TODO : Use the same from the renderer
-constexpr std::array g_ClearValues{VkClearValue{.color = {0.2F, 0.2F, 0.2F, 1.F}},
-                                   VkClearValue{.depthStencil = {1.F, 0U}}};
+static VkQueue GetGraphicsQueue(const std::shared_ptr<luvk::Device>& Device)
+{
+    const std::uint32_t FamilyIndex = Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value();
+    return Device->GetQueue(FamilyIndex);
+}
 
 ImGuiBackendVulkan::ImGuiBackendVulkan(const VkInstance                             Instance,
                                        const std::shared_ptr<luvk::Device>&         Device,
@@ -70,162 +73,126 @@ void ImGuiBackendVulkan::Render(const VkCommandBuffer Cmd, const std::uint32_t C
 
 void ImGuiBackendVulkan::CreateWindow(ImGuiViewport* const Viewport)
 {
-    const auto  Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
-    auto* const Data    = new ViewportData();
+    const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
+    const auto Device  = Backend->GetDevice();
+
+    auto* const Data           = new ViewportData();
+    Viewport->RendererUserData = static_cast<void*>(Data);
 
     ImGui::GetPlatformIO().Platform_CreateVkSurface(Viewport,
                                                     reinterpret_cast<ImU64>(Backend->GetInstance()),
                                                     nullptr,
                                                     reinterpret_cast<ImU64*>(&Data->Surface));
 
-    const std::uint32_t GraphicsFamily = Backend->GetDevice()->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value();
+    Data->CommandPool = luvk::CreateModule<luvk::CommandPool>(Device);
+    Data->Sync        = luvk::CreateModule<luvk::Synchronization>(Device);
+    Data->SwapChain   = luvk::CreateModule<luvk::SwapChain>(Device, Backend->GetMemory(), Data->Sync);
+    Data->Draw        = luvk::CreateModule<luvk::Draw>(Device, Data->Sync);
 
-    VkSurfaceCapabilitiesKHR SurfaceCapabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Backend->GetDevice()->GetPhysicalDevice(), Data->Surface, &SurfaceCapabilities);
-
-    VkExtent2D SwapchainExtent;
-    if (SurfaceCapabilities.currentExtent.width != 0xFFFFFFFF)
+    Data->Draw->RegisterDrawCommand(luvk::DrawCallbackInfo{[Data, Viewport](const VkCommandBuffer CommandBuffer)
     {
-        SwapchainExtent = SurfaceCapabilities.currentExtent;
-    }
-    else
-    {
-        SwapchainExtent.width = std::clamp(static_cast<std::uint32_t>(Viewport->Size.x),
-                                           SurfaceCapabilities.minImageExtent.width,
-                                           SurfaceCapabilities.maxImageExtent.width);
-        SwapchainExtent.height = std::clamp(static_cast<std::uint32_t>(Viewport->Size.y),
-                                            SurfaceCapabilities.minImageExtent.height,
-                                            SurfaceCapabilities.maxImageExtent.height);
-    }
+        if (Data && Viewport)
+        {
+            const std::uint32_t CurrentFrame = Data->Sync->GetCurrentFrame();
+            Data->Mesh->UpdateBuffers(Viewport->DrawData, CurrentFrame);
+            Data->Mesh->Render(CommandBuffer, CurrentFrame);
 
-    Data->SwapChain = std::make_shared<luvk::SwapChain>(Backend->GetDevice(), Backend->GetMemory());
-    Data->SwapChain->CreateSwapChain({.Extent = SwapchainExtent, .Surface = Data->Surface}, nullptr);
+            return true;
+        }
+        return false;
+    }});
 
-    Data->CommandPool = std::make_shared<luvk::CommandPool>(Backend->GetDevice());
-    Data->CommandPool->CreateCommandPool(GraphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    Data->Mesh = std::make_shared<ImGuiMesh>(Device,
+                                             Backend->GetMemory(),
+                                             Backend->GetMesh()->GetMaterial());
 
-    Data->Sync = std::make_shared<luvk::Synchronization>(Backend->GetDevice(), Data->SwapChain, Data->CommandPool);
-    Data->Sync->Initialize();
-    Data->Sync->SetupFrames();
+    Data->SwapChain->CreateSwapChain({.Extent = {.width = static_cast<std::uint32_t>(Viewport->Size.x),
+                                                 .height = static_cast<std::uint32_t>(Viewport->Size.y)},
+                                      .Surface = Data->Surface},
+                                     nullptr);
 
-    Data->Mesh = std::make_shared<ImGuiMesh>(Backend->GetDevice(), Backend->GetMemory(), Backend->GetMesh()->GetMaterial());
+    const std::uint32_t QueueFamilyIndex = Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value();
+    Data->CommandPool->CreateCommandPool(QueueFamilyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-    Viewport->RendererUserData = static_cast<void*>(Data);
+    Data->Sync->Initialize(Data->CommandPool->AllocateRenderCommandBuffers());
 }
 
 void ImGuiBackendVulkan::DestroyWindow(ImGuiViewport* const Viewport)
 {
-    if (auto* Data = static_cast<ViewportData*>(Viewport->RendererUserData);
-        Data != nullptr)
+    const auto Data = static_cast<ViewportData*>(Viewport->RendererUserData);
+    if (!Data)
     {
-        const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
-        const auto Device  = Backend->GetDevice();
-
-        Device->Wait(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()));
-
-        Data->SwapChain.reset();
-        Data->Sync.reset();
-        Data->CommandPool.reset();
-        Data->Mesh.reset();
-
-        if (Data->Surface != VK_NULL_HANDLE)
-        {
-            vkDestroySurfaceKHR(static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData)->GetInstance(),
-                                Data->Surface,
-                                nullptr);
-        }
-
-        delete Data;
+        return;
     }
+
+    const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
+    const auto Device  = Backend->GetDevice();
+
+    Device->WaitQueue(GetGraphicsQueue(Device));
+
+    Data->Mesh.reset();
+    Data->Sync.reset();
+    Data->CommandPool.reset();
+    Data->SwapChain.reset();
+    Data->Draw.reset();
+
+    if (Data->Surface != VK_NULL_HANDLE)
+    {
+        vkDestroySurfaceKHR(Backend->GetInstance(), Data->Surface, nullptr);
+    }
+
+    delete Data;
     Viewport->RendererUserData = nullptr;
 }
 
 void ImGuiBackendVulkan::SetWindowSize(ImGuiViewport* const Viewport, const ImVec2 Size)
 {
-    if (const auto* Data = static_cast<ViewportData*>(Viewport->RendererUserData);
-        Data != nullptr)
+    const auto Data = static_cast<ViewportData*>(Viewport->RendererUserData);
+    if (!Data)
     {
-        const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
-        const auto Device  = Backend->GetDevice();
-
-        Device->Wait(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()));
-
-        Data->SwapChain->Recreate({static_cast<std::uint32_t>(Size.x), static_cast<std::uint32_t>(Size.y)}, nullptr);
+        return;
     }
+
+    const auto Device = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData)->GetDevice();
+
+    Device->WaitQueue(GetGraphicsQueue(Device));
+
+    Data->SwapChain->Recreate({static_cast<uint32_t>(Size.x), static_cast<uint32_t>(Size.y)}, nullptr);
+    Data->Sync->ResetFrames();
 }
 
 void ImGuiBackendVulkan::RenderWindow(ImGuiViewport* const Viewport, void*)
 {
-    const auto Backend = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData);
-    const auto Data    = static_cast<ViewportData*>(Viewport->RendererUserData);
-    const auto Device  = Backend->GetDevice();
-
-    Data->Sync->AdvanceFrame();
-    const auto       CurrentFrame = static_cast<std::uint32_t>(Data->Sync->GetCurrentFrame());
-    luvk::FrameData& Frame        = Data->Sync->GetFrame(CurrentFrame);
-
-    if (Frame.Submitted)
+    const auto Data = static_cast<ViewportData*>(Viewport->RendererUserData);
+    if (!Data)
     {
-        Device->Wait(Frame.InFlight, VK_TRUE, UINT64_MAX);
+        return;
     }
 
-    vkAcquireNextImageKHR(Device->GetLogicalDevice(),
-                          Data->SwapChain->GetHandle(),
-                          UINT64_MAX,
-                          Frame.ImageAvailable,
-                          VK_NULL_HANDLE,
-                          &Data->ImageIndex);
+    luvk::FrameData&                   Frame      = Data->Sync->GetCurrentFrameData();
+    const std::optional<std::uint32_t> ImageIndex = Data->SwapChain->Acquire(Frame);
 
-    vkResetFences(Device->GetLogicalDevice(), 1U, &Frame.InFlight);
-    vkResetCommandBuffer(Frame.CommandBuffer, 0U);
+    if (!ImageIndex.has_value())
+    {
+        Data->ImageIndex = -1;
+        return;
+    }
 
-    constexpr VkCommandBufferBeginInfo BeginInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT};
-    vkBeginCommandBuffer(Frame.CommandBuffer, &BeginInfo);
+    const std::uint32_t IndexValue = ImageIndex.value();
+    Data->ImageIndex               = static_cast<std::int32_t>(IndexValue);
 
-    const VkRenderPassBeginInfo RPBeginInfo{.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                            .renderPass = Data->SwapChain->GetRenderPass(),
-                                            .framebuffer = Data->SwapChain->GetFramebuffer(Data->ImageIndex),
-                                            .renderArea = {{0, 0}, Data->SwapChain->GetExtent()},
-                                            .clearValueCount = static_cast<std::uint32_t>(std::size(g_ClearValues)),
-                                            .pClearValues = std::data(g_ClearValues)};
-
-    vkCmdBeginRenderPass(Frame.CommandBuffer, &RPBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    Data->Mesh->UpdateBuffers(Viewport->DrawData, CurrentFrame);
-    Data->Mesh->Render(Frame.CommandBuffer, CurrentFrame);
-
-    vkCmdEndRenderPass(Frame.CommandBuffer);
-    vkEndCommandBuffer(Frame.CommandBuffer);
-
-    constexpr VkPipelineStageFlags WaitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    const VkSemaphore              Semaphore = Data->Sync->GetRenderFinished(Data->ImageIndex);
-
-    const VkSubmitInfo SubmitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-                                  .waitSemaphoreCount = 1U,
-                                  .pWaitSemaphores = &Frame.ImageAvailable,
-                                  .pWaitDstStageMask = &WaitStage,
-                                  .commandBufferCount = 1U,
-                                  .pCommandBuffers = &Frame.CommandBuffer,
-                                  .signalSemaphoreCount = 1U,
-                                  .pSignalSemaphores = &Semaphore};
-
-    vkQueueSubmit(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()), 1U, &SubmitInfo, Frame.InFlight);
+    Data->Draw->RecordCommands(Frame, Data->SwapChain->GetRenderTarget(IndexValue));
+    Data->Draw->SubmitFrame(Frame, IndexValue);
 }
 
 void ImGuiBackendVulkan::SwapBuffers(ImGuiViewport* const Viewport, void*)
 {
-    const auto Data   = static_cast<ViewportData*>(Viewport->RendererUserData);
-    const auto Device = static_cast<ImGuiBackendVulkan*>(ImGui::GetIO().BackendRendererUserData)->GetDevice();
+    const auto Data = static_cast<ViewportData*>(Viewport->RendererUserData);
 
-    const VkSemaphore    Semaphore = Data->Sync->GetRenderFinished(Data->ImageIndex);
-    const VkSwapchainKHR SwapChain = Data->SwapChain->GetHandle();
+    if (!Data || Data->ImageIndex < 0)
+    {
+        return;
+    }
 
-    const VkPresentInfoKHR PresentInfo{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-                                       .waitSemaphoreCount = 1U,
-                                       .pWaitSemaphores = &Semaphore,
-                                       .swapchainCount = 1U,
-                                       .pSwapchains = &SwapChain,
-                                       .pImageIndices = &Data->ImageIndex};
-
-    vkQueuePresentKHR(Device->GetQueue(Device->FindQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT).value()), &PresentInfo);
+    Data->SwapChain->Present(Data->ImageIndex);
 }
