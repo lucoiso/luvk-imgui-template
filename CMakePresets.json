@@ -1,0 +1,60 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 28, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LUVK_TEMPLATE_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "base",
+      "displayName": "template (Debug)"
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "displayName": "template (Release)",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "debug-example",
+      "inherits": "debug",
+      "displayName": "template + luvk example (Debug)",
+      "cacheVariables": {
+        "LUVK_BUILD_EXAMPLE": "ON"
+      }
+    },
+    {
+      "name": "release-example",
+      "inherits": "release",
+      "displayName": "template + luvk example (Release)",
+      "cacheVariables": {
+        "LUVK_BUILD_EXAMPLE": "ON"
+      }
+    },
+    {
+      "name": "release-portable",
+      "inherits": "release-example",
+      "displayName": "portable Release (static MSVC runtime)",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "debug-example", "configurePreset": "debug-example" },
+    { "name": "release-example", "configurePreset": "release-example" },
+    { "name": "release-portable", "configurePreset": "release-portable" }
+  ]
+}

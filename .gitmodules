@@ -1,0 +1,3 @@
+[submodule "luvk"]
+	path = luvk
+	url = https://github.com/lucoiso/luvk.git

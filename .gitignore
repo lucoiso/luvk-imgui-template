@@ -1,0 +1,31 @@
+# Build output
+build/
+build-*/
+bin/
+lib/
+pdb/
+out/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+CMakeUserPresets.json
+compile_commands.json
+
+# IDE / OS
+.vs/
+.idea/
+*.sln
+*.vcxproj*
+*.user
+.DS_Store
+Thumbs.db
+
+# Runtime / binaries
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.spv
+imgui.ini
